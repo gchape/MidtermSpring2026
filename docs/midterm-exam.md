@@ -13,7 +13,8 @@ The code is written in a procedural, feature-grown style:
 * console input/output mixed with game logic
 * turn flow, scoring, parsing, and rule execution mixed together
 
-Your job is not to rewrite it. Your job is to make it safer and easier to change through characterization tests and incremental refactoring.
+Your job is not to rewrite it. Your job is to make it safer and easier to change through characterization tests and
+incremental refactoring.
 
 ## Main Goal
 
@@ -25,7 +26,8 @@ The strongest solutions will move toward an MVC-like separation:
 * console rendering and prompts are separated from rule execution
 * command parsing and turn orchestration are not tangled with card rules
 
-Do not create classes named `Model`, `View`, or `Controller` just to satisfy the phrase MVC. Naming is not evidence of design. Responsibilities and tests are.
+Do not create classes named `Model`, `View`, or `Controller` just to satisfy the phrase MVC. Naming is not evidence of
+design. Responsibilities and tests are.
 
 ## Required Work
 
@@ -57,7 +59,8 @@ Read the implemented rules:
 
 Before refactoring risky behavior, add tests that describe what the current system does.
 
-Characterization tests are tests for existing behavior. Their purpose is to document how the current code behaves before you change its design. They are not tests for an ideal version of UNO.
+Characterization tests are tests for existing behavior. Their purpose is to document how the current code behaves before
+you change its design. They are not tests for an ideal version of UNO.
 
 If the current implementation has a quirk, your tests should capture that quirk. For example:
 
@@ -65,7 +68,9 @@ If the current implementation has a quirk, your tests should capture that quirk.
 * if a human can type `draw` even while holding a legal card, test that current behavior
 * if illegal input causes a penalty card and turn loss, test that current behavior
 
-These tests protect the game while you extract methods, move responsibilities, and rename code. Refactoring is successful only if the characterized behavior still works afterward, unless a behavior change is explicitly documented in your report and covered by tests.
+These tests protect the game while you extract methods, move responsibilities, and rename code. Refactoring is
+successful only if the characterized behavior still works afterward, unless a behavior change is explicitly documented
+in your report and covered by tests.
 
 Your tests should cover at least these behaviors:
 
@@ -115,7 +120,8 @@ Your design should make at least one of these possible extensions easier:
 * add a replay log
 * replace or improve the CLI view
 
-You do not need to implement the extension during the midterm. You must leave a design that makes such a change plausible.
+You do not need to implement the extension during the midterm. You must leave a design that makes such a change
+plausible.
 
 ## Constraints
 

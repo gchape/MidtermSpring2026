@@ -21,5 +21,3 @@ Start with behavior preservation.
 * Split Phase
 * Replace Conditional with Polymorphism
 * Introduce Parameter Object
-
-

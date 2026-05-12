@@ -114,12 +114,14 @@ Low credit:
 Excellent:
 
 * Refactoring report clearly explains the refactoring path, preserved behavior, and remaining risks. Up to `10` marks.
-* Extension-readiness note identifies a realistic extension point and where the design still resists change. Up to `5` marks.
+* Extension-readiness note identifies a realistic extension point and where the design still resists change. Up to `5`
+  marks.
 
 Partial credit:
 
 * Refactoring report summarizes changes but does not explain tradeoffs. Award partial credit from the `10` report marks.
-* Extension-readiness note is vague but identifies some plausible extension direction. Award partial credit from the `5` extension-readiness marks.
+* Extension-readiness note is vague but identifies some plausible extension direction. Award partial credit from the `5`
+  extension-readiness marks.
 * Remaining risks are incomplete.
 
 Low credit:
@@ -146,14 +148,14 @@ Behavior Preservation And Characterization Tests /25
 Use this conversion table:
 
 | Base internal mark | Regular grading points |
-|---|---:|
-| `0-24` | `0/30` |
-| `25-39` | `6/30` |
-| `40-49` | `10/30` |
-| `50-59` | `15/30` |
-| `60-69` | `20/30` |
-| `70-84` | `25/30` |
-| `85-100` | `30/30` |
+|--------------------|-----------------------:|
+| `0-24`             |                 `0/30` |
+| `25-39`            |                 `6/30` |
+| `40-49`            |                `10/30` |
+| `50-59`            |                `15/30` |
+| `60-69`            |                `20/30` |
+| `70-84`            |                `25/30` |
+| `85-100`           |                `30/30` |
 
 Interpretation:
 
@@ -176,15 +178,19 @@ Apply grading in this order:
 3. Apply every relevant gate to the converted regular grade.
 4. If multiple gates apply, the most restrictive maximum wins.
 
-For gating purposes, `meaningful` means the submission has enough evidence to avoid the corresponding low-credit description in the internal-mark category. For example, a few tests that do not characterize the existing UNO behavior do not count as meaningful characterization tests.
+For gating purposes, `meaningful` means the submission has enough evidence to avoid the corresponding low-credit
+description in the internal-mark category. For example, a few tests that do not characterize the existing UNO behavior
+do not count as meaningful characterization tests.
 
 ### Rule 1: No Meaningful Refactoring, Maximum 10/30
 
-If the submission mostly leaves the monolithic design intact and performs only cosmetic edits, the regular grade cannot exceed `10/30`.
+If the submission mostly leaves the monolithic design intact and performs only cosmetic edits, the regular grade cannot
+exceed `10/30`.
 
 ### Rule 2: No Characterization Tests, Maximum 15/30
 
-If there are no meaningful characterization tests, the regular grade cannot exceed `15/30`, even if the code looks cleaner.
+If there are no meaningful characterization tests, the regular grade cannot exceed `15/30`, even if the code looks
+cleaner.
 
 ### Rule 3: Behavior Not Preserved, Maximum 20/30
 
@@ -192,7 +198,8 @@ If important documented behavior changes without explanation and tests, the regu
 
 ### Rule 4: Full Rewrite, Maximum 15/30
 
-If the student replaces the project with a new implementation instead of refactoring the provided code, the regular grade cannot exceed `15/30`.
+If the student replaces the project with a new implementation instead of refactoring the provided code, the regular
+grade cannot exceed `15/30`.
 
 If the rewrite also provides no meaningful refactoring evidence, Rule 1 also applies and the final cap becomes `10/30`.
 
