@@ -2,7 +2,10 @@
 
 This is a standalone CLI UNO-like game.
 
-The code is written as plausible feature-grown Java: almost everything lives in one procedural `Main` class. It works, but it has mixed responsibilities, duplicated rule logic, primitive-heavy card handling, global state, and condition-heavy gameplay code. The goal is to refactor it safely, not rewrite it.
+The code is written as plausible feature-grown Java: almost everything lives in one procedural
+`tech.provokedynamic.tech.provokedynamic.uno.Main` class. It works, but it has mixed responsibilities, duplicated rule
+logic, primitive-heavy
+card handling, global state, and condition-heavy gameplay code. The goal is to refactor it safely, not rewrite it.
 
 ## Compile
 
