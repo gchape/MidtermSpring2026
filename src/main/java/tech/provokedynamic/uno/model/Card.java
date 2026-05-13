@@ -1,62 +1,89 @@
 package tech.provokedynamic.uno.model;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Value object representing a single UNO card.
  * <p>
- * Replaces raw strings like "R+2", "W4", "GS" with a typed object
- * that knows its own color and rank. All parsing is centralized here.
- * <p>
- * Color is empty string for wild cards.
+ * String representations (like "R+2") are generated dynamically
+ * rather than stored, ensuring the Enums are the single source of truth.
  */
-public record Card(String code) {
-    public static final String WILD = "WILD";
-    public static final String WILD_DRAW_FOUR = "WILD_DRAW_FOUR";
-    public static final String SKIP = "SKIP";
-    public static final String REVERSE = "REVERSE";
-    public static final String DRAW_TWO = "DRAW_TWO";
-    public static final String NUMBER = "NUMBER";
+public record Card(Color color, Rank rank, int number) {
 
-    public String color() {
-        if (code.startsWith("R")) return "R";
-        if (code.startsWith("Y")) return "Y";
-        if (code.startsWith("G")) return "G";
-        if (code.startsWith("B")) return "B";
-        return "";
-    }
+    public static Card fromCode(String code) {
+        if (code.equals("W")) return new Card(Color.NONE, Rank.WILD, -1);
+        if (code.equals("W4")) return new Card(Color.NONE, Rank.WILD_DRAW_FOUR, -1);
 
-    public String rank() {
-        return switch (code) {
-            case "W" -> WILD;
-            case "W4" -> WILD_DRAW_FOUR;
-            default -> {
-                if (code.endsWith("S")) yield SKIP;
-                if (code.endsWith("R")) yield REVERSE;
-                if (code.endsWith("+2")) yield DRAW_TWO;
-                yield NUMBER;
-            }
+        Color color = switch (code.charAt(0)) {
+            case 'R' -> Color.RED;
+            case 'Y' -> Color.YELLOW;
+            case 'G' -> Color.GREEN;
+            case 'B' -> Color.BLUE;
+            default -> Color.NONE;
         };
-    }
 
-    public int number() {
-        if (!rank().equals(NUMBER)) return -1;
-        return Integer.parseInt(code.substring(1));
-    }
-
-    public boolean isWild() {
-        return code.startsWith("W");
+        String value = code.substring(1);
+        return switch (value) {
+            case "S" -> new Card(color, Rank.SKIP, -1);
+            case "R" -> new Card(color, Rank.REVERSE, -1);
+            case "+2" -> new Card(color, Rank.DRAW_TWO, -1);
+            default -> new Card(color, Rank.NUMBER, Integer.parseInt(value));
+        };
     }
 
     public int points() {
-        return switch (rank()) {
-            case NUMBER -> number();
-            case SKIP, REVERSE, DRAW_TWO -> 20;
-            case WILD, WILD_DRAW_FOUR -> 50;
-            default -> 0;
-        };
+        return rank == Rank.NUMBER ? number : rank.getBaseValue();
+    }
+
+    public boolean isWild() {
+        return rank == Rank.WILD || rank == Rank.WILD_DRAW_FOUR;
     }
 
     @Override
+    @NotNull
     public String toString() {
-        return code;
+        if (rank == Rank.WILD) return "W";
+        if (rank == Rank.WILD_DRAW_FOUR) return "W4";
+
+        String colorChar = switch (color) {
+            case RED -> "R";
+            case YELLOW -> "Y";
+            case GREEN -> "G";
+            case BLUE -> "B";
+            default -> "";
+        };
+
+        String rankStr = switch (rank) {
+            case NUMBER -> String.valueOf(number);
+            case SKIP -> "S";
+            case REVERSE -> "R";
+            case DRAW_TWO -> "+2";
+            default -> "";
+        };
+
+        return colorChar + rankStr;
+    }
+
+    public enum Color {
+        RED, YELLOW, GREEN, BLUE, NONE
+    }
+
+    public enum Rank {
+        NUMBER(0),
+        SKIP(20),
+        REVERSE(20),
+        DRAW_TWO(20),
+        WILD(50),
+        WILD_DRAW_FOUR(50);
+
+        private final int baseValue;
+
+        Rank(int baseValue) {
+            this.baseValue = baseValue;
+        }
+
+        public int getBaseValue() {
+            return baseValue;
+        }
     }
 }
