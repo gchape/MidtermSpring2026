@@ -8,100 +8,100 @@ class CardTest {
 
     @Test
     void colorRed() {
-        assertEquals("R", new Card("R5").color());
+        assertEquals(Card.Color.RED, Card.fromCode("R5").color());
     }
 
     @Test
     void colorYellow() {
-        assertEquals("Y", new Card("Y0").color());
+        assertEquals(Card.Color.YELLOW, Card.fromCode("Y0").color());
     }
 
     @Test
     void colorGreen() {
-        assertEquals("G", new Card("GS").color());
+        assertEquals(Card.Color.GREEN, Card.fromCode("GS").color());
     }
 
     @Test
     void colorBlue() {
-        assertEquals("B", new Card("B+2").color());
+        assertEquals(Card.Color.BLUE, Card.fromCode("B+2").color());
     }
 
     @Test
     void wildHasNoColor() {
-        assertEquals("", new Card("W").color());
-        assertEquals("", new Card("W4").color());
+        assertEquals(Card.Color.NONE, Card.fromCode("W").color());
+        assertEquals(Card.Color.NONE, Card.fromCode("W4").color());
     }
 
     @Test
     void rankNumber() {
-        assertEquals(Card.NUMBER, new Card("R5").rank());
+        assertEquals(Card.Rank.NUMBER, Card.fromCode("R5").rank());
     }
 
     @Test
     void rankSkip() {
-        assertEquals(Card.SKIP, new Card("GS").rank());
+        assertEquals(Card.Rank.SKIP, Card.fromCode("GS").rank());
     }
 
     @Test
     void rankReverse() {
-        assertEquals(Card.REVERSE, new Card("BR").rank());
+        assertEquals(Card.Rank.REVERSE, Card.fromCode("BR").rank());
     }
 
     @Test
     void rankDrawTwo() {
-        assertEquals(Card.DRAW_TWO, new Card("Y+2").rank());
+        assertEquals(Card.Rank.DRAW_TWO, Card.fromCode("Y+2").rank());
     }
 
     @Test
     void rankWild() {
-        assertEquals(Card.WILD, new Card("W").rank());
+        assertEquals(Card.Rank.WILD, Card.fromCode("W").rank());
     }
 
     @Test
     void rankWildDrawFour() {
-        assertEquals(Card.WILD_DRAW_FOUR, new Card("W4").rank());
+        assertEquals(Card.Rank.WILD_DRAW_FOUR, Card.fromCode("W4").rank());
     }
 
     @Test
     void numberExtracted() {
-        assertEquals(7, new Card("B7").number());
+        assertEquals(7, Card.fromCode("B7").number());
     }
 
     @Test
     void nonNumberCardsReturnMinusOne() {
-        assertEquals(-1, new Card("RS").number());
-        assertEquals(-1, new Card("W").number());
-        assertEquals(-1, new Card("W4").number());
+        assertEquals(-1, Card.fromCode("RS").number());
+        assertEquals(-1, Card.fromCode("W").number());
+        assertEquals(-1, Card.fromCode("W4").number());
     }
 
     @Test
     void numberCardPointsEqualFaceValue() {
-        assertEquals(9, new Card("R9").points());
-        assertEquals(0, new Card("G0").points());
+        assertEquals(9, Card.fromCode("R9").points());
+        assertEquals(0, Card.fromCode("G0").points());
     }
 
     @Test
     void actionCardPointsTwenty() {
-        assertEquals(20, new Card("YS").points());
-        assertEquals(20, new Card("GR").points());
-        assertEquals(20, new Card("B+2").points());
+        assertEquals(20, Card.fromCode("YS").points());
+        assertEquals(20, Card.fromCode("GR").points());
+        assertEquals(20, Card.fromCode("B+2").points());
     }
 
     @Test
     void wildPointsFifty() {
-        assertEquals(50, new Card("W").points());
-        assertEquals(50, new Card("W4").points());
+        assertEquals(50, Card.fromCode("W").points());
+        assertEquals(50, Card.fromCode("W4").points());
     }
 
     @Test
     void isWildTrueForWilds() {
-        assertTrue(new Card("W").isWild());
-        assertTrue(new Card("W4").isWild());
+        assertTrue(Card.fromCode("W").isWild());
+        assertTrue(Card.fromCode("W4").isWild());
     }
 
     @Test
     void isWildFalseForColorCards() {
-        assertFalse(new Card("R5").isWild());
-        assertFalse(new Card("GS").isWild());
+        assertFalse(Card.fromCode("R5").isWild());
+        assertFalse(Card.fromCode("GS").isWild());
     }
 }

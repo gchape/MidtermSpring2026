@@ -21,8 +21,8 @@ class GameStateTest {
         GameState state = freshState();
         while (state.deckSize() > 0) state.draw();
 
-        state.addToDiscard(new Card("R5"));
-        state.addToDiscard(new Card("G3"));
+        state.addToDiscard(Card.fromCode("R5"));
+        state.addToDiscard(Card.fromCode("G3"));
 
         Card drawn = state.draw();
         assertNotNull(drawn);
@@ -38,21 +38,22 @@ class GameStateTest {
         for (int i = 0; i < 200; i++) {
             last = state.draw();
         }
-        assertEquals("W", last.code());
+        // Use toString() since the 'code' field was removed from the Card record
+        assertEquals("W", last.toString());
     }
 
     @Test
     void addToHandIncreasesHandSize() {
         GameState state = freshState();
         int before = state.handSize(0);
-        state.addToHand(0, new Card("R5"));
+        state.addToHand(0, Card.fromCode("R5"));
         assertEquals(before + 1, state.handSize(0));
     }
 
     @Test
     void removeFromHandDecreasesHandSize() {
         GameState state = freshState();
-        state.addToHand(0, new Card("G3"));
+        state.addToHand(0, Card.fromCode("G3"));
         int before = state.handSize(0);
         state.removeFromHand(0, 0);
         assertEquals(before - 1, state.handSize(0));
@@ -61,9 +62,10 @@ class GameStateTest {
     @Test
     void getFromHandReturnsCorrectCard() {
         GameState state = freshState();
-        state.addToHand(0, new Card("Y7"));
+        state.addToHand(0, Card.fromCode("Y7"));
         Card last = state.getFromHand(0, state.handSize(0) - 1);
-        assertEquals("Y7", last.code());
+        // Use toString() since the 'code' field was removed from the Card record
+        assertEquals("Y7", last.toString());
     }
 
     @Test
@@ -90,7 +92,8 @@ class GameStateTest {
     void reverseFlipsDirectionPositiveToNegative() {
         GameState state = freshThreePlayerState();
         assertEquals(1, state.getDirection());
-        state.setDirection(state.getDirection() * -1);
+        // Use the new encapsulated helper method
+        state.reverseDirection();
         assertEquals(-1, state.getDirection());
     }
 
@@ -100,7 +103,8 @@ class GameStateTest {
         GameState state = freshState();
         state.setCurrentPlayer(0);
         state.setDirection(1);
-        state.setDirection(state.getDirection() * -1); // flip
+        // Use the new encapsulated helper method
+        state.reverseDirection();
         state.next();
         state.next();
         assertEquals(0, state.getCurrentPlayer());
@@ -109,8 +113,8 @@ class GameStateTest {
     @Test
     void drawTwoGivesNextPlayerTwoCards() {
         GameState state = freshThreePlayerState();
-        state.addToDiscard(new Card("R1"));
-        state.addToDiscard(new Card("R2"));
+        state.addToDiscard(Card.fromCode("R1"));
+        state.addToDiscard(Card.fromCode("R2"));
 
         int nextPlayer = 1;
         int before = state.handSize(nextPlayer);
@@ -123,19 +127,19 @@ class GameStateTest {
         GameState state = new GameState(10, new Random(0));
         state.setupPlayers(2, false); // playerCount bots, no human
         for (int i = 0; i < 2; i++) {
-            state.addToHand(i, new Card("R1"));
+            state.addToHand(i, Card.fromCode("R1"));
         }
-        state.setUpCard(new Card("R9"));
-        state.setCalledColor("");
+        state.setUpCard(Card.fromCode("R9"));
+        state.setCalledColor(Card.Color.NONE);
         return state;
     }
 
     private GameState freshThreePlayerState() {
         GameState state = new GameState(10, new Random(0));
         state.setupPlayers(3, false);
-        for (int i = 0; i < 3; i++) state.addToHand(i, new Card("R1"));
-        state.setUpCard(new Card("R9"));
-        state.setCalledColor("");
+        for (int i = 0; i < 3; i++) state.addToHand(i, Card.fromCode("R1"));
+        state.setUpCard(Card.fromCode("R9"));
+        state.setCalledColor(Card.Color.NONE);
         return state;
     }
 }
