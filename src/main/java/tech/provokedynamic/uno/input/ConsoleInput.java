@@ -4,12 +4,10 @@ import tech.provokedynamic.uno.model.Card;
 import tech.provokedynamic.uno.rules.Rules;
 
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
-/**
- * Human input via the console (Scanner), extracted from Main.
- * Preserves original prompt text and quirks exactly.
- */
 public class ConsoleInput implements PlayerInputSource {
 
     private final Scanner scanner;
@@ -23,28 +21,53 @@ public class ConsoleInput implements PlayerInputSource {
         while (true) {
             IO.print("Choose card index/code or draw: ");
 
-            String input = scanner.nextLine().trim().toUpperCase();
-
-            if (input.equals("DRAW")) return -1;
-
-            try {
-                int index = Integer.parseInt(input);
-                if (index >= 0 && index < hand.size()) return index;
-            } catch (NumberFormatException ignored) {
-                // Not a number, fall through to check if it's a card code
+            var input = scanner.nextLine().trim();
+            if (input.equalsIgnoreCase("DRAW")) {
+                return -1;
             }
 
-            for (int i = 0; i < hand.size(); i++) {
-                // Replaced .code() with .toString()
-                if (hand.get(i).toString().equals(input)) {
-                    if (Rules.isLegal(hand.get(i), upCard, calledColor)) return i;
-
-                    IO.println("That card is not legal.");
-                }
+            var cardSelection = parseCardSelection(input, hand);
+            if (cardSelection.isEmpty()) {
+                IO.println("Card not found.");
+                continue;
             }
 
-            IO.println("Card not found.");
+            int index = cardSelection.getAsInt();
+            if (Rules.isLegal(hand.get(index), upCard, calledColor)) {
+                return index;
+            }
+
+            IO.println("That card is not legal.");
         }
+    }
+
+    private OptionalInt parseCardSelection(String input, List<Card> hand) {
+        var index = parseIndex(input, hand);
+
+        if (index.isPresent()) {
+            return index;
+        }
+
+        return findCardByCode(input, hand);
+    }
+
+    private OptionalInt parseIndex(String input, List<Card> hand) {
+        try {
+            int index = Integer.parseInt(input);
+
+            if (index >= 0 && index < hand.size()) {
+                return OptionalInt.of(index);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+
+        return OptionalInt.empty();
+    }
+
+    private OptionalInt findCardByCode(String input, List<Card> hand) {
+        return IntStream.range(0, hand.size())
+                .filter(i -> hand.get(i).toString().equalsIgnoreCase(input))
+                .findFirst();
     }
 
     @Override
@@ -53,8 +76,8 @@ public class ConsoleInput implements PlayerInputSource {
 
         String answer = scanner.nextLine();
 
-        return answer.equalsIgnoreCase("y") ||
-                answer.equalsIgnoreCase("yes");
+        return answer.equalsIgnoreCase("y")
+                || answer.equalsIgnoreCase("yes");
     }
 
     @Override
@@ -62,22 +85,19 @@ public class ConsoleInput implements PlayerInputSource {
         while (true) {
             IO.print("Call color R/Y/G/B: ");
 
-            String input = scanner.nextLine().trim().toUpperCase();
+            String input = scanner.nextLine().trim();
 
-            switch (input) {
-                case "R" -> {
-                    return Card.Color.RED;
-                }
-                case "Y" -> {
-                    return Card.Color.YELLOW;
-                }
-                case "G" -> {
-                    return Card.Color.GREEN;
-                }
-                case "B" -> {
-                    return Card.Color.BLUE;
-                }
+            if (input.length() != 1) {
+                IO.println("Bad color.");
+                continue;
             }
+
+            Card.Color color = Card.Color.fromCode(input.charAt(0));
+
+            if (color != Card.Color.NONE) {
+                return color;
+            }
+
             IO.println("Bad color.");
         }
     }
