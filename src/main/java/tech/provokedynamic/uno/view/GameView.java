@@ -14,13 +14,13 @@ import java.util.List;
  * - A future GUI would implement its own view.
  */
 public interface GameView {
-    void showTurnHeader(String playerName, Card upCard, String calledColor, List<Card> hand);
+    void showTurnHeader(String playerName, Card upCard, Card.Color calledColor, List<Card> hand);
 
     void showDraw(String playerName, Card drawn);
 
     void showPlay(String playerName, Card card);
 
-    void showColorCall(String playerName, String color);
+    void showColorCall(String playerName, Card.Color color);
 
     void showIllegalIndex(String playerName);
 

@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class SilentView implements GameView {
     @Override
-    public void showTurnHeader(String n, Card u, String c, List<Card> h) {
+    public void showTurnHeader(String n, Card u, Card.Color c, List<Card> h) {
     }
 
     @Override
@@ -22,7 +22,7 @@ public class SilentView implements GameView {
     }
 
     @Override
-    public void showColorCall(String n, String c) {
+    public void showColorCall(String n, Card.Color c) {
     }
 
     @Override

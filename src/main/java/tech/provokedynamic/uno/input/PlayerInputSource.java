@@ -15,7 +15,7 @@ public interface PlayerInputSource {
     /**
      * Ask which card to play. Returns index into hand, or -1 to draw.
      */
-    int askHuman(List<Card> hand, Card upCard, String calledColor);
+    int askHuman(List<Card> hand, Card upCard, Card.Color calledColor);
 
     /**
      * After drawing a card, ask whether to play it.
@@ -25,5 +25,5 @@ public interface PlayerInputSource {
     /**
      * Ask which color to call after playing a wild.
      */
-    String askColor();
+    Card.Color askColor();
 }

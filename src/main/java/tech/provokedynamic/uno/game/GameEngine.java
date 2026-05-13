@@ -25,7 +25,6 @@ import java.util.List;
  * To add a rule variant, subclass or wrap GameEngine.
  */
 public class GameEngine {
-
     private static final int SAFETY_LIMIT = 3000;
 
     private final GameState state;
@@ -52,7 +51,7 @@ public class GameEngine {
             first = state.draw();
         }
         state.setUpCard(first);
-        state.setCalledColor("");
+        state.setCalledColor(Card.Color.NONE); // Enum replacing ""
         state.setDirection(1);
         state.setCurrentPlayer(state.nextRandomInt(state.playerCount()));
     }
@@ -109,12 +108,12 @@ public class GameEngine {
                 state.removeFromHand(cp, chosen);
                 state.addToDiscard(state.getUpCard());
                 state.setUpCard(card);
-                state.setCalledColor("");
+                state.setCalledColor(Card.Color.NONE); // Enum replacing ""
                 view.showPlay(state.playerName(cp), card);
 
                 // Wild color call
                 if (card.isWild()) {
-                    String color = state.isHuman(cp)
+                    Card.Color color = state.isHuman(cp)
                             ? input.askColor()
                             : BotStrategy.chooseColor(state.hand(cp));
                     state.setCalledColor(color);
@@ -131,7 +130,7 @@ public class GameEngine {
                     return cp;
                 }
 
-                resolveAction(card, input);
+                resolveAction(card);
 
             } else {
                 state.next();
@@ -148,14 +147,14 @@ public class GameEngine {
      * <p>
      * Extension point: add new card effects here as new cases.
      */
-    private void resolveAction(Card card, PlayerInputSource input) {
+    private void resolveAction(Card card) {
         switch (card.rank()) {
-            case Card.SKIP -> {
+            case SKIP -> {
                 state.next();
                 state.next();
             }
-            case Card.REVERSE -> {
-                state.setDirection(state.getDirection() * -1);
+            case REVERSE -> {
+                state.reverseDirection(); // Replaced state.setDirection(state.getDirection() * -1);
                 if (state.playerCount() == 2) {
                     state.next();
                     state.next();
@@ -163,7 +162,7 @@ public class GameEngine {
                     state.next();
                 }
             }
-            case Card.DRAW_TWO -> {
+            case DRAW_TWO -> {
                 state.next();
                 int dt = state.getCurrentPlayer();
                 state.addToHand(dt, state.draw());
@@ -171,7 +170,7 @@ public class GameEngine {
                 view.showDrawTwo(state.playerName(dt));
                 state.next();
             }
-            case Card.WILD_DRAW_FOUR -> {
+            case WILD_DRAW_FOUR -> {
                 state.next();
                 int wf = state.getCurrentPlayer();
                 for (int i = 0; i < 4; i++) state.addToHand(wf, state.draw());

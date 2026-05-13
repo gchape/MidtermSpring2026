@@ -19,9 +19,20 @@ public class ConsoleView implements GameView {
         return sb.toString();
     }
 
+    private String colorToChar(Card.Color color) {
+        return switch (color) {
+            case RED -> "R";
+            case YELLOW -> "Y";
+            case GREEN -> "G";
+            case BLUE -> "B";
+            default -> "";
+        };
+    }
+
     @Override
-    public void showTurnHeader(String playerName, Card upCard, String calledColor, List<Card> hand) {
-        IO.println("\nUp card: " + upCard + (calledColor.isEmpty() ? "" : " called " + calledColor));
+    public void showTurnHeader(String playerName, Card upCard, Card.Color calledColor, List<Card> hand) {
+        String colorStr = (calledColor == Card.Color.NONE) ? "" : " called " + colorToChar(calledColor);
+        IO.println("\nUp card: " + upCard + colorStr);
         IO.println(playerName + " hand: " + join(hand));
     }
 
@@ -36,8 +47,8 @@ public class ConsoleView implements GameView {
     }
 
     @Override
-    public void showColorCall(String playerName, String color) {
-        IO.println(playerName + " calls " + color);
+    public void showColorCall(String playerName, Card.Color color) {
+        IO.println(playerName + " calls " + colorToChar(color));
     }
 
     @Override

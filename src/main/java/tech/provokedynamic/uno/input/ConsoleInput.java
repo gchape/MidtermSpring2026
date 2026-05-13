@@ -19,7 +19,7 @@ public class ConsoleInput implements PlayerInputSource {
     }
 
     @Override
-    public int askHuman(List<Card> hand, Card upCard, String calledColor) {
+    public int askHuman(List<Card> hand, Card upCard, Card.Color calledColor) {
         while (true) {
             IO.print("Choose card index/code or draw: ");
 
@@ -30,11 +30,13 @@ public class ConsoleInput implements PlayerInputSource {
             try {
                 int index = Integer.parseInt(input);
                 if (index >= 0 && index < hand.size()) return index;
-            } catch (Exception ignored) {
+            } catch (NumberFormatException ignored) {
+                // Not a number, fall through to check if it's a card code
             }
 
             for (int i = 0; i < hand.size(); i++) {
-                if (hand.get(i).code().equals(input)) {
+                // Replaced .code() with .toString()
+                if (hand.get(i).toString().equals(input)) {
                     if (Rules.isLegal(hand.get(i), upCard, calledColor)) return i;
 
                     IO.println("That card is not legal.");
@@ -56,7 +58,7 @@ public class ConsoleInput implements PlayerInputSource {
     }
 
     @Override
-    public String askColor() {
+    public Card.Color askColor() {
         while (true) {
             IO.print("Call color R/Y/G/B: ");
 
@@ -64,16 +66,16 @@ public class ConsoleInput implements PlayerInputSource {
 
             switch (input) {
                 case "R" -> {
-                    return "R";
+                    return Card.Color.RED;
                 }
                 case "Y" -> {
-                    return "Y";
+                    return Card.Color.YELLOW;
                 }
                 case "G" -> {
-                    return "G";
+                    return Card.Color.GREEN;
                 }
                 case "B" -> {
-                    return "B";
+                    return Card.Color.BLUE;
                 }
             }
             IO.println("Bad color.");
