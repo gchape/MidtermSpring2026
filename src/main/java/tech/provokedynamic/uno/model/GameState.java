@@ -7,12 +7,6 @@ import java.util.Random;
 
 /**
  * All mutable game state in one place, accessed via getters and setters.
- * <p>
- * Fields are private. Only state that legitimately needs to change from
- * outside (upCard, calledColor, direction, currentPlayer) has setters.
- * Collections are exposed as unmodifiable views; mutation goes through
- * named methods (draw, addToHand, addScore, etc.) so callers cannot
- * accidentally corrupt internal state.
  */
 public class GameState {
     private final List<String> playerNames = new ArrayList<>();
@@ -22,11 +16,12 @@ public class GameState {
     private final List<Card> discard = new ArrayList<>();
     private final int[] scores;
 
+    private final Random random;
+
     private Card upCard = null;
-    private String calledColor = "";
+    private Card.Color calledColor = Card.Color.NONE;
     private int direction = 1;
     private int currentPlayer = 0;
-    private Random random;
 
     public GameState(int maxPlayers, Random random) {
         this.scores = new int[maxPlayers];
@@ -37,11 +32,13 @@ public class GameState {
         playerNames.clear();
         humanPlayers.clear();
         hands.clear();
+
         if (human) {
             playerNames.add("You");
             humanPlayers.add(true);
             hands.add(new ArrayList<>());
         }
+
         for (int i = 1; i <= bots; i++) {
             playerNames.add("Bot" + i);
             humanPlayers.add(false);
@@ -69,11 +66,11 @@ public class GameState {
         this.upCard = upCard;
     }
 
-    public String getCalledColor() {
+    public Card.Color getCalledColor() {
         return calledColor;
     }
 
-    public void setCalledColor(String color) {
+    public void setCalledColor(Card.Color color) {
         this.calledColor = color;
     }
 
@@ -83,6 +80,10 @@ public class GameState {
 
     public void setDirection(int direction) {
         this.direction = direction;
+    }
+
+    public void reverseDirection() {
+        this.direction *= -1;
     }
 
     public int getCurrentPlayer() {
@@ -105,15 +106,8 @@ public class GameState {
         return discard.size();
     }
 
-    /**
-     * Unmodifiable view — use addToHand / removeFromHand to mutate.
-     */
     public List<Card> hand(int index) {
         return Collections.unmodifiableList(hands.get(index));
-    }
-
-    public void setRandom(Random random) {
-        this.random = random;
     }
 
     public void addToHand(int playerIndex, Card card) {
@@ -138,24 +132,28 @@ public class GameState {
 
     public void buildAndShuffleDeck() {
         deck.clear();
-        String[] colors = {"R", "Y", "G", "B"};
-        for (String color : colors) {
-            deck.add(new Card(color + "0"));
-            for (int n = 1; n <= 9; n++) {
-                deck.add(new Card(color + n));
-                deck.add(new Card(color + n));
+
+        for (Card.Color color : Card.Color.values()) {
+            if (color == Card.Color.NONE) continue;
+
+            deck.add(new Card(color, Card.Rank.NUMBER, 0));
+
+            for (int i = 0; i < 2; i++) {
+                for (int n = 1; n <= 9; n++) {
+                    deck.add(new Card(color, Card.Rank.NUMBER, n));
+                }
+
+                deck.add(new Card(color, Card.Rank.SKIP, -1));
+                deck.add(new Card(color, Card.Rank.REVERSE, -1));
+                deck.add(new Card(color, Card.Rank.DRAW_TWO, -1));
             }
-            deck.add(new Card(color + "S"));
-            deck.add(new Card(color + "S"));
-            deck.add(new Card(color + "R"));
-            deck.add(new Card(color + "R"));
-            deck.add(new Card(color + "+2"));
-            deck.add(new Card(color + "+2"));
         }
+
         for (int i = 0; i < 4; i++) {
-            deck.add(new Card("W"));
-            deck.add(new Card("W4"));
+            deck.add(new Card(Card.Color.NONE, Card.Rank.WILD, -1));
+            deck.add(new Card(Card.Color.NONE, Card.Rank.WILD_DRAW_FOUR, -1));
         }
+
         Collections.shuffle(deck, random);
     }
 
@@ -165,7 +163,11 @@ public class GameState {
             discard.clear();
             Collections.shuffle(deck, random);
         }
-        if (deck.isEmpty()) return new Card("W");
+
+        if (deck.isEmpty()) {
+            return new Card(Card.Color.NONE, Card.Rank.WILD, -1);
+        }
+
         return deck.removeFirst();
     }
 
@@ -174,9 +176,7 @@ public class GameState {
     }
 
     public void next() {
-        currentPlayer += direction;
-        if (currentPlayer >= playerNames.size()) currentPlayer = 0;
-        if (currentPlayer < 0) currentPlayer = playerNames.size() - 1;
+        currentPlayer = (currentPlayer + direction + playerNames.size()) % playerNames.size();
     }
 
     public int nextRandomInt(int bound) {

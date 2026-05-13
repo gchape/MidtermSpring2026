@@ -20,7 +20,7 @@ public class Rules {
 
     /**
      * Returns true if {@code card} may legally be played on top of {@code upCard}
-     * given the currently called color (empty string if none).
+     * given the currently called color (NONE if no wild color is active).
      * <p>
      * Legal conditions (any one is sufficient):
      * 1. Card is a wild (always playable).
@@ -29,30 +29,22 @@ public class Rules {
      * 4. Both cards share the same non-number rank (e.g. two skips).
      * 5. Both cards are numbers and share the same digit.
      */
-    public static boolean isLegal(Card card, Card upCard, String calledColor) {
+    public static boolean isLegal(Card card, Card upCard, Card.Color calledColor) {
         if (card.isWild()) {
             return true;
         }
-        if (card.color().equals(upCard.color())) {
+        if (card.color() == upCard.color()) {
             return true;
         }
-        if (!calledColor.isEmpty() && card.color().equals(calledColor)) {
+        if (calledColor != Card.Color.NONE && card.color() == calledColor) {
             return true;
         }
-        if (card.rank().equals(upCard.rank()) && !card.rank().equals(Card.NUMBER)) {
+        if (card.rank() == upCard.rank() && card.rank() != Card.Rank.NUMBER) {
             return true;
         }
-        return card.rank().equals(Card.NUMBER)
-                && upCard.rank().equals(Card.NUMBER)
+        return card.rank() == Card.Rank.NUMBER
+                && upCard.rank() == Card.Rank.NUMBER
                 && card.number() == upCard.number();
-    }
-
-    /**
-     * Convenience overload accepting raw string codes, for callers that have
-     * not yet been migrated to Card objects.
-     */
-    public static boolean isLegal(String cardCode, String upCode, String calledColor) {
-        return isLegal(new Card(cardCode), new Card(upCode), calledColor);
     }
 
     /**
