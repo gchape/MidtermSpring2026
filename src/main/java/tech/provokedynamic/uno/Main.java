@@ -12,33 +12,39 @@ import tech.provokedynamic.uno.view.SilentView;
 static void selfTest() {
     int passed = 0;
 
-    if (new Card("R5").color().equals("R")) passed++;
+    if (Card.fromCode("R5").color() == Card.Color.RED) passed++;
     else fail("color R5");
-    if (new Card("G+2").rank().equals(Card.DRAW_TWO)) passed++;
+
+    if (Card.fromCode("G+2").rank() == Card.Rank.DRAW_TWO) passed++;
     else fail("rank +2");
-    if (new Card("W4").points() == 50) passed++;
+
+    if (Card.fromCode("W4").points() == 50) passed++;
     else fail("wild points");
-    if (Rules.isLegal("R2", "R9", "")) passed++;
+
+    if (Rules.isLegal(Card.fromCode("R2"), Card.fromCode("R9"), Card.Color.NONE)) passed++;
     else fail("same color");
-    if (Rules.isLegal("G9", "R9", "")) passed++;
+
+    if (Rules.isLegal(Card.fromCode("G9"), Card.fromCode("R9"), Card.Color.NONE)) passed++;
     else fail("same number");
-    if (Rules.isLegal("B3", "W", "B")) passed++;
+
+    if (Rules.isLegal(Card.fromCode("B3"), Card.fromCode("W"), Card.Color.BLUE)) passed++;
     else fail("called color");
-    if (!Rules.isLegal("B3", "R9", "")) passed++;
+
+    if (!Rules.isLegal(Card.fromCode("B3"), Card.fromCode("R9"), Card.Color.NONE)) passed++;
     else fail("illegal mismatch");
 
     var h = new java.util.ArrayList<Card>();
-    h.add(new Card("B3"));
-    h.add(new Card("R4"));
-    h.add(new Card("W"));
-    if (BotStrategy.chooseCard(h, new Card("R9"), "") == 1) passed++;
+    h.add(Card.fromCode("B3"));
+    h.add(Card.fromCode("R4"));
+    h.add(Card.fromCode("W"));
+    if (BotStrategy.chooseCard(h, Card.fromCode("R9"), Card.Color.NONE) == 1) passed++;
     else fail("bot normal before wild");
 
     var h2 = new java.util.ArrayList<Card>();
-    h2.add(new Card("B1"));
-    h2.add(new Card("B2"));
-    h2.add(new Card("R3"));
-    if (BotStrategy.chooseColor(h2).equals("B")) passed++;
+    h2.add(Card.fromCode("B1"));
+    h2.add(Card.fromCode("B2"));
+    h2.add(Card.fromCode("R3"));
+    if (BotStrategy.chooseColor(h2) == Card.Color.BLUE) passed++;
     else fail("bot color");
 
     IO.println("Passed " + passed + " characterization checks.");
