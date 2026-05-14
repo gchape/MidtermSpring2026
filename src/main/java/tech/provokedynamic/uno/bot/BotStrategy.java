@@ -40,10 +40,12 @@ public class BotStrategy {
     private static int findLegal(List<Card> hand, Card upCard, Card.Color calledColor, Predicate<Card> condition) {
         for (int i = 0; i < hand.size(); i++) {
             Card card = hand.get(i);
+
             if (condition.test(card) && Rules.isLegal(card, upCard, calledColor)) {
                 return i;
             }
         }
+
         return -1;
     }
 

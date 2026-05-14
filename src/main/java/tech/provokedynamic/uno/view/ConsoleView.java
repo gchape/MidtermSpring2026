@@ -12,10 +12,15 @@ public class ConsoleView implements GameView {
 
     private static String join(List<Card> cards) {
         var sb = new StringBuilder();
+
         for (int i = 0; i < cards.size(); i++) {
             sb.append(i).append(":").append(cards.get(i));
-            if (i < cards.size() - 1) sb.append(" ");
+
+            if (i < cards.size() - 1) {
+                sb.append(" ");
+            }
         }
+
         return sb.toString();
     }
 
