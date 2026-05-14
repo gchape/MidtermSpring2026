@@ -4,6 +4,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Characterization tests for the Card value object.
+ * Pins parsing, color, rank, number, points, isWild, and toString behavior.
+ */
 class CardTest {
 
     @Test
@@ -68,8 +72,15 @@ class CardTest {
     }
 
     @Test
+    void numberZeroExtracted() {
+        assertEquals(0, Card.fromCode("R0").number());
+    }
+
+    @Test
     void nonNumberCardsReturnMinusOne() {
         assertEquals(-1, Card.fromCode("RS").number());
+        assertEquals(-1, Card.fromCode("BR").number());
+        assertEquals(-1, Card.fromCode("G+2").number());
         assertEquals(-1, Card.fromCode("W").number());
         assertEquals(-1, Card.fromCode("W4").number());
     }
@@ -78,6 +89,7 @@ class CardTest {
     void numberCardPointsEqualFaceValue() {
         assertEquals(9, Card.fromCode("R9").points());
         assertEquals(0, Card.fromCode("G0").points());
+        assertEquals(5, Card.fromCode("B5").points());
     }
 
     @Test
@@ -103,5 +115,14 @@ class CardTest {
     void isWildFalseForColorCards() {
         assertFalse(Card.fromCode("R5").isWild());
         assertFalse(Card.fromCode("GS").isWild());
+        assertFalse(Card.fromCode("B+2").isWild());
+    }
+
+    @Test
+    void toStringRoundTrip() {
+        for (String code : new String[]{"R0", "R9", "GS", "BR", "Y+2", "W", "W4", "B3", "Y0"}) {
+            assertEquals(code, Card.fromCode(code).toString(),
+                    "toString() should reproduce the original code for: " + code);
+        }
     }
 }

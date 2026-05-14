@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * characterization tests — they assert what the current bot DOES, not
  * what an ideal bot would do.
  * <p>
- * Priority order (draw-two → skip → number → wild → draw) is a quirk of
+ * Priority order (draw-two -> skip -> number -> wild -> draw) is a quirk of
  * the original implementation and must be preserved unless explicitly changed.
  */
 class BotStrategyTest {
@@ -36,7 +36,19 @@ class BotStrategyTest {
     @Test
     void prefersNumberOverWild() {
         List<Card> hand = List.of(Card.fromCode("W"), Card.fromCode("R4"));
-        // R4 legal on R9; wild is last resort → index 1
+        // R4 legal on R9; wild is last resort — index 1 chosen
+        assertEquals(1, BotStrategy.chooseCard(hand, Card.fromCode("R9"), Card.Color.NONE));
+    }
+
+    @Test
+    void prefersDrawTwoOverNumber() {
+        List<Card> hand = List.of(Card.fromCode("R3"), Card.fromCode("R+2"));
+        assertEquals(1, BotStrategy.chooseCard(hand, Card.fromCode("R9"), Card.Color.NONE));
+    }
+
+    @Test
+    void prefersSkipOverWild() {
+        List<Card> hand = List.of(Card.fromCode("W"), Card.fromCode("RS"));
         assertEquals(1, BotStrategy.chooseCard(hand, Card.fromCode("R9"), Card.Color.NONE));
     }
 
@@ -54,10 +66,23 @@ class BotStrategyTest {
     }
 
     @Test
+    void drawsFromEmptyHand() {
+        // Edge case: empty hand should return -1 (draw), not crash
+        assertEquals(-1, BotStrategy.chooseCard(List.of(), Card.fromCode("R9"), Card.Color.NONE));
+    }
+
+    @Test
     void usesCalledColorWhenChoosingCard() {
-        // Up card is W, called color is BLUE — B3 should be legal and chosen
+        // Up card is W, called color is BLUE — B3 should be legal and chosen (number before wild)
         List<Card> hand = List.of(Card.fromCode("R5"), Card.fromCode("B3"));
         assertEquals(1, BotStrategy.chooseCard(hand, Card.fromCode("W"), Card.Color.BLUE));
+    }
+
+    @Test
+    void wildIsLegalRegardlessOfCalledColor() {
+        // Wild is always playable even when a color is called
+        List<Card> hand = List.of(Card.fromCode("W"));
+        assertEquals(0, BotStrategy.chooseCard(hand, Card.fromCode("W"), Card.Color.RED));
     }
 
     @Test
@@ -67,10 +92,34 @@ class BotStrategyTest {
     }
 
     @Test
+    void tieBreaksRedOverYellow() {
+        List<Card> hand = List.of(Card.fromCode("R1"), Card.fromCode("Y2"));
+        assertEquals(Card.Color.RED, BotStrategy.chooseColor(hand));
+    }
+
+    @Test
     void tieBreaksRedOverBlue() {
-        // R and B tied at 1 each — RED wins (tie-break order: RED ≥ YELLOW ≥ GREEN ≥ BLUE)
+        // R and B tied at 1 each — RED wins (tie-break order: RED >= YELLOW >= GREEN >= BLUE)
         List<Card> hand = List.of(Card.fromCode("R1"), Card.fromCode("B2"));
         assertEquals(Card.Color.RED, BotStrategy.chooseColor(hand));
+    }
+
+    @Test
+    void tieBreaksYellowOverGreen() {
+        List<Card> hand = List.of(Card.fromCode("Y1"), Card.fromCode("G2"));
+        assertEquals(Card.Color.YELLOW, BotStrategy.chooseColor(hand));
+    }
+
+    @Test
+    void tieBreaksGreenOverBlue() {
+        List<Card> hand = List.of(Card.fromCode("G1"), Card.fromCode("B2"));
+        assertEquals(Card.Color.GREEN, BotStrategy.chooseColor(hand));
+    }
+
+    @Test
+    void tieBreaksYellowOverBlue() {
+        List<Card> hand = List.of(Card.fromCode("Y1"), Card.fromCode("B2"));
+        assertEquals(Card.Color.YELLOW, BotStrategy.chooseColor(hand));
     }
 
     @Test
@@ -78,5 +127,11 @@ class BotStrategyTest {
         // No colored cards — all counts zero — falls through to RED
         List<Card> hand = List.of(Card.fromCode("W"), Card.fromCode("W4"));
         assertEquals(Card.Color.RED, BotStrategy.chooseColor(hand));
+    }
+
+    @Test
+    void singleColorCard() {
+        List<Card> hand = List.of(Card.fromCode("G5"));
+        assertEquals(Card.Color.GREEN, BotStrategy.chooseColor(hand));
     }
 }
