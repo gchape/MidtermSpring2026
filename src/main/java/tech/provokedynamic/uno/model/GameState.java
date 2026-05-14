@@ -182,4 +182,8 @@ public class GameState {
     public int nextRandomInt(int bound) {
         return random.nextInt(bound);
     }
+
+    public void clearHand(int playerIndex) {
+        hands.get(playerIndex).clear();
+    }
 }
