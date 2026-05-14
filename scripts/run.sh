@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-scripts/compile.sh
-java -cp out Main "$@"
-
+./mvnw compile -q
+java --enable-preview \
+     -cp target/classes \
+     Main "$@"

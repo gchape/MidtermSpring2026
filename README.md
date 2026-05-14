@@ -1,11 +1,13 @@
 # Midterm UNO CLI
 
-This is a standalone CLI UNO-like game.
+A CLI UNO-like game, refactored from a single procedural class into a
+testable, MVC-like design. Game rules, state, bot strategy, and console
+I/O are separated into distinct classes with clear responsibilities.
 
-The code is written as plausible feature-grown Java: almost everything lives in one procedural
-`tech.provokedynamic.tech.provokedynamic.uno.Main` class. It works, but it has mixed responsibilities, duplicated rule
-logic, primitive-heavy
-card handling, global state, and condition-heavy gameplay code. The goal is to refactor it safely, not rewrite it.
+## Requirements
+
+- Java 25+
+- Maven (or the included `mvnw` wrapper)
 
 ## Compile
 
@@ -37,38 +39,46 @@ W4   wild draw four
 draw draw a card
 ```
 
-## Characterization Checks
+## Run Tests
 
 ```bash
 scripts/test.sh
 ```
 
-## Submission
-
-Submit your work through GitHub:
-
-1. Fork this repository to your GitHub account.
-2. Clone your fork locally.
-3. Complete the midterm work in your fork.
-4. Commit your changes with clear commit messages.
-5. Push your branch to GitHub.
-6. Open a pull request from your fork back to the original repository.
-
-Your pull request must include:
-
-* refactored source code
-* characterization tests
-* `docs/refactoring-report.md`
-* `docs/extension-readiness.md`
-
-Do not submit a zip file instead of a pull request unless the instructor explicitly asks for it.
+Tests are JUnit 5 characterization tests covering rule behavior, card
+parsing, bot strategy, state mechanics, and game integration.
 
 ## Rules
 
 See `docs/rules.html` for the implemented game rules.
 
-## Midterm Materials
+## Project Structure
 
-* `docs/midterm-exam.md`: midterm brief
-* `docs/rubric.md`: grading rubric
-* `docs/refactoring-guide.md`: suggested refactoring path
+```text
+src/main/java/tech/provokedynamic/uno/
+  Main.java                  — CLI entry point, argument parsing
+  model/
+    Card.java                — Card value object (color, rank, points)
+    GameState.java           — All mutable game state
+  rules/
+    Rules.java               — Legal-play rules and scoring
+  bot/
+    BotStrategy.java         — Bot card selection and color choice
+  game/
+    GameEngine.java          — Turn loop and win detection
+    CardEffect.java          — Post-play effect interface
+    CardEffects.java         — Effect registry (skip, reverse, draw-two, etc.)
+  view/
+    GameView.java            — Output interface
+    ConsoleView.java         — Terminal output
+    SilentView.java          — No-op view for tests and quiet mode
+  input/
+    PlayerInputSource.java   — Human input interface
+    ConsoleInput.java        — Terminal input
+    NullInputSource.java     — Fails fast in bot-only games
+
+docs/
+  rules.html                 — Implemented game rules
+  refactoring-report.md      — What was changed and why
+  extension-readiness.md     — Where the design supports future change
+```
