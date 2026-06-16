@@ -5,4 +5,4 @@ cd "$(dirname "$0")/.."
 
 ./mvnw clean compile
 
-java -cp target/classes Main
+./mvnw -q exec:java

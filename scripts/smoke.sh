@@ -7,7 +7,8 @@ cd "$(dirname "$0")/.."
 
 mvn -q compile
 
-OUTPUT=$(java --enable-preview -cp target/classes Main --quiet --seed 42 --games 3)
+OUTPUT=$(./mvnw -q exec:java \
+  -Dexec.args="--quiet --seed 42 --games 3")
 
 echo "$OUTPUT"
 
