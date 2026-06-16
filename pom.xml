@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>tech.provokedynamic</groupId>
-    <artifactId>MidtermSpring2026</artifactId>
+    <artifactId>05-database-persistence-and-reporting</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
