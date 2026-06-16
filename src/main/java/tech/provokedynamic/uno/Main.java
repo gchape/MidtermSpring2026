@@ -27,7 +27,7 @@ import java.util.Scanner;
 @Slf4j
 public class Main {
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         int bots = 3;
         int games = 1;
         boolean human = false;
@@ -35,7 +35,7 @@ public class Main {
         boolean noDB = false;
         boolean report = false;
         long seed = System.currentTimeMillis();
-        String dbPath = "data/uno";
+        String dbPath = "./data/uno";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
