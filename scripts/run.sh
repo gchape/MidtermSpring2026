@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 set -eu
 
-./mvnw compile -q
-java --enable-preview \
-     -cp target/classes \
-     Main "$@"
+cd "$(dirname "$0")/.."
+
+./mvnw clean compile
+
+java -cp target/classes Main

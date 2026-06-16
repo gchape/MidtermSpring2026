@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
 set -eu
 
-./mvnw compile
+cd "$(dirname "$0")/.."
+
+./mvnw clean compile
