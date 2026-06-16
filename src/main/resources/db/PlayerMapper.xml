@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tech.provokedynamic.uno.db.mapper.PlayerMapper">
+
+    <insert id="insertIfAbsent">
+        MERGE INTO players (name) KEY (name) VALUES (#{name})
+    </insert>
+
+    <select id="findByName" resultType="PlayerRecord">
+        SELECT id, name
+        FROM players
+        WHERE name = #{name}
+    </select>
+
+    <select id="findWinCounts" resultType="WinCountRecord">
+        SELECT p.name AS player_name, COUNT(*) AS wins
+        FROM game_players gp
+                 JOIN players p ON p.id = gp.player_id
+        WHERE gp.is_winner = TRUE
+        GROUP BY p.name
+        ORDER BY wins DESC
+    </select>
+
+    <select id="findTopScores" resultType="TopScoreRecord">
+        SELECT p.name AS player_name, SUM(gp.score) AS total_score
+        FROM game_players gp
+                 JOIN players p ON p.id = gp.player_id
+        GROUP BY p.name
+        ORDER BY total_score DESC
+    </select>
+
+</mapper>
