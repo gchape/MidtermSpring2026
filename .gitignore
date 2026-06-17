@@ -52,4 +52,4 @@ logs/
 
 # Test reports
 test-results/
-surefire-reports/
+surefire-reports/data/
