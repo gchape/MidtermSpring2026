@@ -23,12 +23,15 @@ The next player loses their turn. Play continues with the player after the skipp
 
 ## Reverse
 
-Turn direction flips. In a two-player game, Reverse acts like Skip (direction flips, then the same player goes again),
-consistent with common UNO rule interpretation. This is tested and documented here.
+Turn direction flips from clockwise to counterclockwise (or the reverse).
+
+**Two-player variant:** in a two-player game, Reverse acts like Skip — direction still flips, but then `next()` is
+called twice, which returns play to the same player. This is consistent with common UNO rule interpretation and is
+tested in `SkipReverseTest`.
 
 ## Draw Two
 
-The next player draws two cards and loses their turn. No stacking.
+The next player draws two cards and loses their turn. No stacking implemented.
 
 ## Wild
 
@@ -58,11 +61,9 @@ When a player's hand drops to one card, the engine asks whether they call UNO:
   player exposed.
 - **The missed-call check fires at the start of the very next turn.** If the player who didn't call is still sitting
   on one card when another player's turn begins, they draw two cards as a penalty. The window closes the moment it
-  becomes the same player's own turn again (e.g. after certain two-player Reverse sequences) — they are never
-  penalized for their own upcoming turn.
+  becomes the same player's own turn again.
 
-This is tested in `UnoCallTest`, with separate tests for: bots auto-calling, a human successfully calling and avoiding
-the penalty, and a human declining and being penalized on the next turn.
+This is tested in `UnoCallTest`.
 
 ## Round Scoring
 
@@ -72,17 +73,21 @@ value, Skip/Reverse/Draw Two score 20, Wild/Wild Draw Four score 50.
 ## Multi-Round Game to Target Score
 
 The game runs rounds until a player reaches or exceeds the target score (default 500). Scores accumulate across rounds.
-The first player to reach the target wins the match. In persistence terms, one "match" (everything from the first deal
-to the target-score win) is saved as a single `games` row, with `rounds_played` recording how many individual rounds
-it took — see `docs/database.md` for the schema rationale.
+The first player to reach the target wins the match.
+
+## Starting Card Behavior
+
+The first up-card is always a non-wild colored card. If a Wild or Wild Draw Four is drawn during setup, it is set aside
+and another card is drawn in its place, repeating until a non-wild card appears.
+
+Colored action cards (Skip, Reverse, Draw Two) **are** allowed as the starting up-card. Their effect is not applied
+at the start of the round — play simply begins from that card as the current up-card without triggering any action.
+This is a deliberate simplification and is documented here.
 
 ## Simplifications and Variants
 
 - No Wild Draw Four challenge rule.
 - No Draw Two stacking.
-- Bots always call UNO automatically and never miss it; only human players can decline the call and risk the penalty
-  (see "UNO Call and Missed-UNO Penalty" above).
-- The starting up-card is never a Wild or Wild Draw Four: if one is drawn during setup, it is set aside and another
-  card is drawn in its place, repeating until a non-wild card appears. Colored action cards (Skip, Reverse, Draw Two)
-  *are* allowed as the starting card; their effect is simply never triggered, since the round just begins from that
-  up-card rather than "being played."
+- Bots always call UNO automatically; only human players can decline and risk the penalty.
+- Starting action cards are allowed but their effect is not triggered at round start.
+- Reverse in a two-player game acts like Skip (direction flips, same player goes again).
