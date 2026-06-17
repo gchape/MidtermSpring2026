@@ -5,14 +5,13 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-mvn -q compile
+./mvnw -q compile
 
 OUTPUT=$(./mvnw -q exec:java \
-  -Dexec.args="--quiet --seed 42 --games 3")
+  -Dexec.args="--quiet --seed 42 --target 200 --no-db")
 
 echo "$OUTPUT"
 
-# The final scores block always ends with "PlayerName: N".
 if echo "$OUTPUT" | grep -qE ': [1-9][0-9]*$'; then
     echo "SMOKE OK: at least one non-zero score found."
     exit 0
