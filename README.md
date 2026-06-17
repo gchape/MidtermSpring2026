@@ -1,6 +1,7 @@
 # UNO — Final Project
 
-A command-line UNO implementation in Java with full rule support, bot AI, and multi-round scoring.
+A command-line UNO implementation in Java with full rule support, bot AI, multi-round scoring, and game history
+persistence.
 
 ## Requirements
 
@@ -31,13 +32,16 @@ A command-line UNO implementation in Java with full rule support, bot AI, and mu
 
 ## CLI Options
 
-| Flag         | Default | Description                                       |
-|--------------|---------|---------------------------------------------------|
-| `--bots N`   | 3       | Number of bot players (total players must be 2–4) |
-| `--target N` | 500     | Score target to win the match                     |
-| `--human`    | off     | Add a human player                                |
-| `--quiet`    | off     | Suppress turn-by-turn output                      |
-| `--seed N`   | random  | Fix the random seed for reproducible games        |
+| Flag             | Default      | Description                                       |
+|------------------|--------------|---------------------------------------------------|
+| `--bots N`       | 3            | Number of bot players (total players must be 2–4) |
+| `--target N`     | 500          | Score target to win the match                     |
+| `--human`        | off          | Add a human player                                |
+| `--quiet`        | off          | Suppress turn-by-turn output                      |
+| `--seed N`       | random       | Fix the random seed for reproducible games        |
+| `--db-path PATH` | `./data/uno` | Custom database file path                         |
+| `--no-db`        | off          | Disable persistence entirely                      |
+| `--report`       | off          | Print game history and statistics, then exit      |
 
 ## Architecture
 
@@ -53,6 +57,23 @@ A command-line UNO implementation in Java with full rule support, bot AI, and mu
 Game logic is fully testable without a terminal. `GameEngine` only depends on `GameState`, `GameView`, and
 `PlayerInputSource` interfaces.
 
+## Persistence
+
+Game results are saved automatically to an embedded H2 database (`data/uno.mv.db`) after each match.
+
+```sh
+# View game history, win counts, and high scores
+./scripts/run.sh --report
+
+# Play without saving results
+./scripts/run.sh --no-db --quiet --seed 42
+
+# Use a custom database path
+./scripts/run.sh --db-path /tmp/myuno
+```
+
+See [docs/database.md](docs/database.md) for full schema and query documentation.
+
 ## Running Tests
 
 ```sh
@@ -60,4 +81,10 @@ mvn test
 ```
 
 Tests cover deck composition, legal play, all action cards, draw/pass behavior, UNO call and missed-UNO penalty, round
-scoring, and multi-round target detection.
+scoring, multi-round target detection, and persistence.
+
+## Documentation
+
+- [docs/rules-supported.md](docs/rules-supported.md) — which UNO rules are implemented and which variants are used
+- [docs/final-report.md](docs/final-report.md) — architecture, test coverage, and known limitations
+- [docs/database.md](docs/database.md) — schema, ORM configuration, and persistence flags
