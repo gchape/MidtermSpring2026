@@ -3,6 +3,4 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-./mvnw clean compile
-
-./mvnw -q exec:java
+./mvnw -q compile exec:java -Dexec.args="$*"
