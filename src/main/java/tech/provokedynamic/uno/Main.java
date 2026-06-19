@@ -39,13 +39,13 @@ public class Main {
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
-                case "--bots" -> bots = Integer.parseInt(args[++i]);
-                case "--games" -> games = Integer.parseInt(args[++i]);
-                case "--human" -> human = true;
-                case "--quiet" -> quiet = true;
-                case "--seed" -> seed = Long.parseLong(args[++i]);
-                case "--no-db" -> noDB = true;
-                case "--report" -> report = true;
+                case "--bots"    -> bots = Integer.parseInt(args[++i]);
+                case "--games"   -> games = Integer.parseInt(args[++i]);
+                case "--human"   -> human = true;
+                case "--quiet"   -> quiet = true;
+                case "--seed"    -> seed = Long.parseLong(args[++i]);
+                case "--no-db"   -> noDB = true;
+                case "--report"  -> report = true;
                 case "--db-path" -> dbPath = args[++i];
                 case "--help" -> {
                     System.out.println("Usage: java -jar uno.jar [--bots N] [--games N] [--human] [--quiet] [--seed N] [--no-db] [--db-path PATH] [--report]");
@@ -101,18 +101,26 @@ public class Main {
             }
             log.info("=== Game {} of {} starting ===", g, games);
 
+            // Snapshot scores before this game so we can compute the per-game delta.
+            // GameState.scores is cumulative across the whole run; the DB needs
+            // the points earned in this single game only.
+            int[] scoresBefore = new int[state.playerCount()];
+            for (int i = 0; i < state.playerCount(); i++) {
+                scoresBefore[i] = state.getScore(i);
+            }
+
             LocalDateTime startedAt = LocalDateTime.now();
             int winner = engine.playGame(inp);
 
             log.info("=== Game {} finished ===", g);
 
-            // Persist result
+            // Persist result using per-game delta, not the cumulative total
             if (repo != null) {
-                int[] scores = new int[state.playerCount()];
+                int[] gameScores = new int[state.playerCount()];
                 for (int i = 0; i < state.playerCount(); i++) {
-                    scores[i] = state.getScore(i);
+                    gameScores[i] = state.getScore(i) - scoresBefore[i];
                 }
-                repo.saveGame(playerNames, scores, winner, engine.getTurnsPlayed(), startedAt);
+                repo.saveGame(playerNames, gameScores, winner, engine.getTurnsPlayed(), startedAt);
                 log.info("Game {} persisted to database", g);
             }
         }
