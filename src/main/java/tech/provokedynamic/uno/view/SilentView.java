@@ -9,6 +9,7 @@ import java.util.List;
  * Produces no output. Replaces the original {@code quiet} flag.
  */
 public class SilentView implements GameView {
+
     @Override
     public void showTurnHeader(String n, Card u, Card.Color c, List<Card> h) {
     }

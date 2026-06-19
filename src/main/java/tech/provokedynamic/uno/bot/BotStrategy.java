@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BotStrategy {
+
     /**
      * Returns the index of the card the bot wants to play,
      * or -1 if the bot should draw.

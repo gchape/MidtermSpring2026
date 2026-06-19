@@ -17,6 +17,7 @@ import tech.provokedynamic.uno.model.Card;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Rules {
+
     /**
      * Returns true if {@code card} may legally be played on top of {@code upCard}
      * given the currently called color (NONE if no wild color is active).

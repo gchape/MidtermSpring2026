@@ -1,5 +1,6 @@
 package tech.provokedynamic.uno.model;
 
+import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -78,6 +79,7 @@ public record Card(Color color, Rank rank, int number) {
         }
     }
 
+    @Getter
     public enum Rank {
         NUMBER(0),
         SKIP(20),
@@ -92,8 +94,5 @@ public record Card(Color color, Rank rank, int number) {
             this.baseValue = baseValue;
         }
 
-        public int getBaseValue() {
-            return baseValue;
-        }
     }
 }
