@@ -1,126 +1,262 @@
 # Database Documentation
 
-## Selected Tools
+## Overview
 
-| Layer    | Technology                   |
-|----------|------------------------------|
-| Database | H2 (embedded, file mode)     |
-| ORM      | MyBatis 3.5.x                |
-| Test DB  | H2 (in-memory, per test run) |
+UNO uses **H2** as its embedded database and **MyBatis** as the persistence mapper.
+No external database server is required for development, testing, or normal play.
 
-H2 runs embedded inside the JVM — no database server to install or start.
-Data is stored in `data/uno.mv.db` next to the JAR by default.
+---
+
+## Selected Technologies
+
+| Concern     | Technology                                                                                    |
+|-------------|-----------------------------------------------------------------------------------------------|
+| Database    | H2 (embedded, file-backed in prod; in-memory for tests)                                       |
+| Persistence | MyBatis 3 (XML mapper + repository pattern)                                                   |
+| Schema init | `SchemaInit` runs `db/schema.sql` on every startup via `CREATE IF NOT EXISTS`                 |
+| Credentials | Read from `DB_USERNAME` / `DB_PASSWORD` env vars; defaults to `sa` / `` (H2 embedded default) |
+
+### Why H2?
+
+- Zero installation — ships inside the JAR.
+- `AUTO_SERVER=TRUE` allows multiple JVM processes to share the same file database if needed.
+- Identical SQL dialect used in both production (file mode) and tests (in-memory mode), so tests reflect real behaviour.
 
 ---
 
 ## Schema
 
-Defined in `src/main/resources/db/schema.sql`.
-Applied automatically on every startup using `CREATE IF NOT EXISTS` — safe to re-run.
+Located at `src/main/resources/db/schema.sql`.
 
-```text
-players
-(id PK, name UNIQUE)
+```sql
+CREATE TABLE IF NOT EXISTS players
+(
+    id
+    INTEGER
+    PRIMARY
+    KEY
+    AUTO_INCREMENT,
+    name
+    VARCHAR
+(
+    64
+) NOT NULL UNIQUE
+    );
 
-games        (id PK, started_at, finished_at, rounds_played)
-game_players (game_id FK, player_id FK, score, is_winner)
+CREATE TABLE IF NOT EXISTS games
+(
+    id
+    INTEGER
+    PRIMARY
+    KEY
+    AUTO_INCREMENT,
+    started_at
+    TIMESTAMP
+    NOT
+    NULL,
+    finished_at
+    TIMESTAMP,
+    rounds_played
+    INTEGER
+    NOT
+    NULL
+    DEFAULT
+    0
+);
+
+CREATE TABLE IF NOT EXISTS game_players
+(
+    game_id
+    INTEGER
+    NOT
+    NULL
+    REFERENCES
+    games
+(
+    id
+),
+    player_id INTEGER NOT NULL REFERENCES players
+(
+    id
+),
+    score INTEGER NOT NULL DEFAULT 0,
+    is_winner BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY
+(
+    game_id,
+    player_id
+)
+    );
 ```
 
-**Relationships:**
+### What is stored
 
-- One game has many `game_players` rows (one per player in that game).
-- Each `game_players` row references one `players` row.
-- Players are upserted by name on each game save — no duplicates.
+| Data point       | Table / Column           |
+|------------------|--------------------------|
+| Player names     | `players.name`           |
+| Game start time  | `games.started_at`       |
+| Game end time    | `games.finished_at`      |
+| Rounds played    | `games.rounds_played`    |
+| Per-player score | `game_players.score`     |
+| Winner flag      | `game_players.is_winner` |
 
 ---
 
-## ORM Configuration
+## ORM / MyBatis Configuration
 
-`src/main/resources/mybatis-config.xml` configures MyBatis with:
+Configuration file: `src/main/resources/mybatis-config.xml`
 
-- `mapUnderscoreToCamelCase = true` (e.g. `started_at` → `startedAt`)
-- Two mapper XML files: `db/PlayerMapper.xml`, `db/GameMapper.xml`
-- Connection properties injected at runtime via `Database.init(Properties)`
+Key settings:
 
-No credentials are hardcoded in source. Connection URLs are built by
-`Database.h2FileProps()` / `Database.h2MemProps()` at startup.
+- `mapUnderscoreToCamelCase=true` — database columns like `started_at` map automatically to Java fields like
+  `startedAt`.
+- `POOLED` data source — MyBatis manages a connection pool.
+- Transaction manager: `JDBC` — commits are explicit (`session.commit()`).
+
+Mappers registered:
+
+- `db/PlayerMapper.xml` → `PlayerMapper` interface
+- `db/GameMapper.xml`   → `GameMapper` interface
+
+---
+
+## Credentials
+
+Credentials are **never hardcoded**. They are read from environment variables at startup:
+
+| Variable      | Default (H2 embedded) | Purpose           |
+|---------------|-----------------------|-------------------|
+| `DB_USERNAME` | `sa`                  | Database username |
+| `DB_PASSWORD` | *(empty string)*      | Database password |
+
+For the embedded H2 database used here these defaults are safe — H2 in file mode is not network-accessible by default.
+If you switch to a networked database (PostgreSQL, MySQL), set the env vars before running:
+
+```bash
+export DB_USERNAME=myuser
+export DB_PASSWORD=mypassword
+java -jar uno.jar
+```
+
+---
+
+## Schema Initialisation
+
+`SchemaInit.run()` is called automatically in `Main` before any game starts (unless `--no-db` is used). It executes
+`db/schema.sql` using MyBatis's `ScriptRunner`. All statements use `CREATE TABLE IF NOT EXISTS`, making it safe to call
+on every startup.
+
+No manual migration step is required.
 
 ---
 
 ## Running the Application with Persistence
 
-Default (H2 file DB at `data/uno`):
-
 ```bash
-java -jar target/uno.jar --bots 3 --games 5 --quiet
-```
+# Default: saves to ./data/uno (H2 file database)
+java -jar uno.jar
 
-Custom DB path:
+# Custom database path
+java -jar uno.jar --db-path /path/to/mydb
 
-```bash
-java -jar target/uno.jar --db-path /tmp/myuno --games 10 --quiet
-```
+# Bot-only, 5 games, quiet output
+java -jar uno.jar --bots 3 --games 5 --quiet
 
-Disable persistence entirely:
-
-```bash
-java -jar target/uno.jar --no-db --games 5
+# Disable persistence entirely (no DB touched)
+java -jar uno.jar --no-db
 ```
 
 ---
 
 ## Viewing Game History and Statistics
 
+Run with the `--report` flag after one or more games have been played:
+
 ```bash
-java -jar target/uno.jar --report
+java -jar uno.jar --report
 ```
 
-This prints three sections to stdout:
+Output includes three sections:
 
-1. **Recent Games** — last 10 games with per-player scores and winner marked ★
-2. **Player Win Counts** — all players ranked by number of wins
-3. **Highest Total Scores** — all players ranked by cumulative score
+### Recent Games (last 10)
 
-With a custom DB path:
+Lists the most recently finished games with each player's score and a ★ next to the winner.
 
-```bash
-java -jar target/uno.jar --db-path /tmp/myuno --report
+```
+=== Recent Games (last 10) ===
+  Game #3  started=2025-06-01T14:32:00  rounds=12
+    Bot1          score=120 ★
+    Bot2          score=0
+    Bot3          score=45
+```
+
+### Player Win Counts
+
+All players ranked by total number of game wins.
+
+```
+=== Player Win Counts ===
+  Bot1          3 win(s)
+  Bot3          1 win(s)
+```
+
+### Highest Total Scores
+
+All players ranked by the sum of scores across all games.
+
+```
+=== Highest Total Scores ===
+  Bot1          340 pts
+  Bot3          90 pts
+  Bot2          0 pts
 ```
 
 ---
 
 ## Running Persistence Tests
 
+Tests use an **isolated in-memory H2 database** — no external setup, no files written to disk.
+
 ```bash
+# Run all tests (including persistence tests)
 mvn test
-```
 
-Persistence tests are in `GameRepositoryTest`. They use H2 in-memory mode —
-no file is created, no external database is required. Each test run
-gets its own uniquely named in-memory database to prevent cross-run pollution.
-
-To run only persistence tests:
-
-```bash
+# Run only the persistence test class
 mvn test -Dtest=GameRepositoryTest
 ```
 
+`GameRepositoryTest` covers:
+
+| Test                                             | What it verifies                                |
+|--------------------------------------------------|-------------------------------------------------|
+| `saveGame_persistsAllRequiredFields`             | rounds, timestamps, and player rows are written |
+| `saveGame_marksCorrectWinner`                    | the `is_winner` flag is set on the right player |
+| `saveGame_persistsPerPlayerScores`               | each player's score is stored correctly         |
+| `recentGames_respectsLimit`                      | `LIMIT N` is honoured                           |
+| `recentGames_returnsEmptyListWhenNoGames`        | graceful empty result                           |
+| `winCounts_returnsCorrectWinnerTally`            | win aggregation is accurate                     |
+| `winCounts_orderedByWinsDescending`              | result ordering is correct                      |
+| `topScores_returnsAllPlayersWithAggregatedScore` | scores are summed across games                  |
+| `topScores_orderedByTotalScoreDescending`        | result ordering is correct                      |
+| `saveGame_samePlayerNameTwiceDoesNotDuplicate`   | `MERGE` upsert is idempotent                    |
+| `saveGame_safetyLimitGamePersistsWithNoWinner`   | `-1` winner index stores no winner              |
+
 ---
 
-## Mapper Files
+## Repository / DAO Layer
 
-| File                  | Purpose                                                     |
-|-----------------------|-------------------------------------------------------------|
-| `db/PlayerMapper.xml` | Player upsert, lookup, win counts, top scores               |
-| `db/GameMapper.xml`   | Game insert/update, game_players insert, recent games query |
-
----
-
-## Data Directory
-
-At runtime, H2 creates `data/uno.mv.db` in the working directory.
-This file is the persistent store and should be added to `.gitignore`.
+All SQL lives in `src/main/resources/db/GameMapper.xml` and `PlayerMapper.xml`.
+The game logic (`GameEngine`, `Main`) never contains raw SQL.
 
 ```
-data/
+GameRepository          ← single persistence facade used by Main
+  ├── GameMapper         ← insert/update games and game_players rows
+  └── PlayerMapper       ← upsert players; query win counts and top scores
 ```
+
+`GameRepository.saveGame()` performs everything in a single transaction:
+
+1. Upsert each player by name (idempotent).
+2. Insert the `games` row and retrieve the auto-generated `id`.
+3. Insert one `game_players` row per player with the per-game score delta and winner flag.
+4. Commit.
