@@ -1,4 +1,4 @@
-# UNO CLI
+# Assignment 4 — UNO CLI
 
 A command-line UNO card game implemented in Java with Maven, SLF4J/Logback logging, and Docker support.
 
