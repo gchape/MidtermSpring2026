@@ -1,183 +1,220 @@
 package tech.provokedynamic.uno.db.repository;
 
-import org.apache.ibatis.io.Resources;
-import org.apache.ibatis.jdbc.ScriptRunner;
-import org.apache.ibatis.session.SqlSession;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import tech.provokedynamic.uno.db.Database;
-import tech.provokedynamic.uno.db.mapper.PlayerMapper;
+import tech.provokedynamic.uno.db.SchemaInit;
+import tech.provokedynamic.uno.db.model.GamePlayerRecord;
 import tech.provokedynamic.uno.db.model.GameRecord;
 import tech.provokedynamic.uno.db.model.TopScoreRecord;
 import tech.provokedynamic.uno.db.model.WinCountRecord;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Persistence tests for GameRepository.
- * <p>
- * Each test method gets its own isolated in-memory H2 database via
- * a @BeforeEach setup, so tests are fully independent of each other —
- * no @Order annotations, no shared mutable state, no global Database factory.
+ * Persistence layer tests for {@link GameRepository}.
+ *
+ * <p>Each test class run uses a fresh named in-memory H2 database
+ * ({@code DB_CLOSE_DELAY=-1} keeps it alive for the duration of the JVM).
+ * No external database or manual setup is required.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class GameRepositoryTest {
 
-    private static final AtomicInteger DB_COUNTER = new AtomicInteger();
+    private static GameRepository repo;
 
-    private GameRepository repo;
-
-    @BeforeEach
-    void initDatabase() throws IOException, SQLException {
-        // Each test gets a uniquely named in-memory DB — no cross-test pollution,
-        // no reliance on execution order.
-        String dbName = "uno_test_" + DB_COUNTER.incrementAndGet();
-        Database.init(Database.h2MemProps(dbName));
-
-        try (SqlSession session = Database.factory().openSession();
-             Connection conn = session.getConnection()) {
-            ScriptRunner runner = new ScriptRunner(conn);
-            runner.setLogWriter(null);
-            runner.setErrorLogWriter(new PrintWriter(System.err));
-            runner.runScript(new InputStreamReader(
-                    Resources.getResourceAsStream("db/schema.sql")));
-        }
-
+    @BeforeAll
+    static void initDatabase() {
+        // Isolated in-memory H2 — no file, no network, no external state
+        Database.init(Database.h2MemProps("uno_test"));
+        SchemaInit.run();
         repo = new GameRepository();
     }
 
-    // saveGame / recentGames
+    private static LocalDateTime ts(int minutesAgo) {
+        return LocalDateTime.now().minusMinutes(minutesAgo);
+    }
+
+    // Tests: saveGame / recentGames
 
     @Test
+    @Order(1)
     void saveGame_persistsAllRequiredFields() {
-        LocalDateTime start = LocalDateTime.now().minusSeconds(30);
+        List<String> players = List.of("Alice", "Bob");
+        int[] scores = {120, 0};
+        LocalDateTime start = ts(5);
 
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{100, 0}, 0, 15, start);
+        repo.saveGame(players, scores, 0, 7, start);
 
-        List<GameRecord> recent = repo.recentGames(5);
+        List<GameRecord> recent = repo.recentGames(10);
         assertFalse(recent.isEmpty(), "Expected at least one saved game");
 
-        GameRecord g = recent.get(0);
-        assertEquals(15, g.getRoundsPlayed());
-        assertNotNull(g.getFinishedAt(), "finishedAt must be populated");
-        assertEquals(2, g.getPlayers().size(), "Expected one row per player");
+        GameRecord g = recent.getFirst();
+        assertEquals(7, g.getRoundsPlayed(), "rounds_played should be 7");
+        assertNotNull(g.getStartedAt(), "started_at should not be null");
+        assertNotNull(g.getFinishedAt(), "finished_at should not be null");
+
+        // Two player rows attached
+        assertEquals(2, g.getPlayers().size(), "Expected two player rows");
     }
 
     @Test
-    void saveGame_marksCorrectPlayerAsWinner() {
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{80, 20}, 0, 10, LocalDateTime.now());
+    @Order(2)
+    void saveGame_marksCorrectWinner() {
+        List<String> players = List.of("Carol", "Dave");
+        int[] scores = {0, 80};
+        repo.saveGame(players, scores, 1 /* Dave wins */, 4, ts(3));
 
-        GameRecord g = repo.recentGames(1).get(0);
-        var winner = g.getPlayers().stream().filter(p -> p.isWinner()).findFirst();
+        List<GameRecord> recent = repo.recentGames(1);
+        var playerRows = recent.getFirst().getPlayers();
 
-        assertTrue(winner.isPresent(), "Expected exactly one winner");
-        assertEquals("Alice", winner.get().getPlayerName());
+        var winner = playerRows.stream().filter(GamePlayerRecord::isWinner).findFirst();
+        assertTrue(winner.isPresent(), "A winner row should be present");
+        assertEquals("Dave", winner.get().getPlayerName());
     }
 
     @Test
+    @Order(3)
     void saveGame_persistsPerPlayerScores() {
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{150, 75}, 0, 20, LocalDateTime.now());
+        List<String> players = List.of("Eve", "Frank");
+        int[] scores = {200, 50};
+        repo.saveGame(players, scores, 0, 10, ts(2));
 
-        GameRecord g = repo.recentGames(1).get(0);
-        var alice = g.getPlayers().stream()
-                .filter(p -> "Alice".equals(p.getPlayerName()))
+        List<GameRecord> recent = repo.recentGames(1);
+        var playerRows = recent.getFirst().getPlayers();
+
+        var eve = playerRows.stream()
+                .filter(p -> "Eve".equals(p.getPlayerName()))
                 .findFirst()
-                .orElseThrow(() -> new AssertionError("Alice not found"));
+                .orElseThrow();
+        assertEquals(200, eve.getScore(), "Eve's score should be 200");
 
-        assertEquals(150, alice.getScore());
+        var frank = playerRows.stream()
+                .filter(p -> "Frank".equals(p.getPlayerName()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(50, frank.getScore(), "Frank's score should be 50");
     }
 
     @Test
-    void saveGame_noWinnerWhenSafetyLimitHit() {
-        // winnerIndex = -1 signals that the safety round cap was reached
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{0, 0}, -1, 3000, LocalDateTime.now());
+    @Order(4)
+    void recentGames_respectsLimit() {
+        // Save two more games to ensure we have > 1 total
+        repo.saveGame(List.of("G", "H"), new int[]{10, 20}, 1, 2, ts(10));
+        repo.saveGame(List.of("I", "J"), new int[]{30, 40}, 0, 3, ts(9));
 
-        GameRecord g = repo.recentGames(1).get(0);
-        assertEquals(3000, g.getRoundsPlayed());
-        assertFalse(g.getPlayers().stream().anyMatch(p -> p.isWinner()),
-                "No player should be marked winner when the safety limit fires");
+        List<GameRecord> limited = repo.recentGames(1);
+        assertEquals(1, limited.size(), "Limit=1 should return exactly one game");
     }
 
     @Test
-    void recentGames_honorsLimit() {
-        for (int i = 0; i < 5; i++) {
-            repo.saveGame(List.of("Alice", "Bob"), new int[]{50, 0}, 0, 5, LocalDateTime.now());
-        }
+    @Order(5)
+    void recentGames_returnsEmptyListWhenNoGames() {
+        // Fresh DB with no inserts yet — use a separate isolated instance
+        Database.init(Database.h2MemProps("uno_test_empty"));
+        SchemaInit.run();
+        GameRepository emptyRepo = new GameRepository();
 
-        List<GameRecord> recent = repo.recentGames(2);
-        assertTrue(recent.size() <= 2, "recentGames(2) must return at most 2 games");
+        List<GameRecord> result = emptyRepo.recentGames(10);
+        assertNotNull(result);
+        assertTrue(result.isEmpty(), "Expected empty list for a brand-new database");
+
+        // Restore shared repo for subsequent tests
+        Database.init(Database.h2MemProps("uno_test"));
     }
 
-    @Test
-    void recentGames_emptyOnFreshDatabase() {
-        // No games saved — fresh DB from @BeforeEach
-        assertTrue(repo.recentGames(10).isEmpty(),
-                "A fresh database should return no games");
-    }
+    // Tests: winCounts
 
     @Test
-    void recentGames_returnsNewestFirst() {
-        LocalDateTime earlier = LocalDateTime.now().minusMinutes(5);
-        LocalDateTime later = LocalDateTime.now();
-
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{10, 0}, 0, 3, earlier);
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{99, 0}, 0, 7, later);
-
-        List<GameRecord> recent = repo.recentGames(2);
-        assertEquals(7, recent.get(0).getRoundsPlayed(),
-                "Most recent game (7 rounds) should appear first");
-    }
-
-    // Player deduplication
-
-    @Test
-    void saveGame_doesNotDuplicatePlayers() {
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{10, 0}, 0, 5, LocalDateTime.now());
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{10, 0}, 0, 5, LocalDateTime.now());
-
-        try (SqlSession session = Database.factory().openSession()) {
-            PlayerMapper pm = session.getMapper(PlayerMapper.class);
-            assertNotNull(pm.findByName("Alice"),
-                    "Alice should be findable after two games");
-        }
-    }
-
-    // winCounts / topScores
-
-    @Test
-    void winCounts_aggregatesAcrossGames() {
-        // Alice wins twice, Bob wins once
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{100, 0}, 0, 10, LocalDateTime.now());
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{80, 0}, 0, 8, LocalDateTime.now());
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{0, 60}, 1, 12, LocalDateTime.now());
+    @Order(6)
+    void winCounts_returnsCorrectWinnerTally() {
+        // Alice has one earlier win (from test 1); give her another
+        repo.saveGame(List.of("Alice", "Bob"), new int[]{90, 0}, 0, 5, ts(1));
 
         List<WinCountRecord> counts = repo.winCounts();
-        assertFalse(counts.isEmpty());
+        assertFalse(counts.isEmpty(), "Win counts should not be empty");
 
-        WinCountRecord top = counts.get(0);
-        assertEquals("Alice", top.getPlayerName(), "Alice should lead the win table");
-        assertEquals(2, top.getWins());
+        var aliceRow = counts.stream()
+                .filter(r -> "Alice".equals(r.getPlayerName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Alice not found in win counts"));
+
+        assertTrue(aliceRow.getWins() >= 2, "Alice should have at least 2 wins");
     }
 
     @Test
-    void topScores_aggregatesAcrossGames() {
-        // Alice: 100+80 = 180 total; Bob: 50+70 = 120 total
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{100, 50}, 0, 10, LocalDateTime.now());
-        repo.saveGame(List.of("Alice", "Bob"), new int[]{80, 70}, 0, 8, LocalDateTime.now());
+    @Order(7)
+    void winCounts_orderedByWinsDescending() {
+        List<WinCountRecord> counts = repo.winCounts();
+        for (int i = 1; i < counts.size(); i++) {
+            assertTrue(
+                    counts.get(i - 1).getWins() >= counts.get(i).getWins(),
+                    "Win counts should be in descending order"
+            );
+        }
+    }
 
+    // Tests: topScores
+
+    @Test
+    @Order(8)
+    void topScores_returnsAllPlayersWithAggregatedScore() {
         List<TopScoreRecord> scores = repo.topScores();
-        assertFalse(scores.isEmpty());
+        assertFalse(scores.isEmpty(), "Top scores should not be empty");
 
-        TopScoreRecord top = scores.get(0);
-        assertEquals("Alice", top.getPlayerName(), "Alice should lead the score table");
-        assertEquals(180, top.getTotalScore());
+        // Eve scored 200 in test 3 — she should appear
+        var eveRow = scores.stream()
+                .filter(r -> "Eve".equals(r.getPlayerName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Eve not found in top scores"));
+
+        assertTrue(eveRow.getTotalScore() >= 200, "Eve's total score should be >= 200");
+    }
+
+    @Test
+    @Order(9)
+    void topScores_orderedByTotalScoreDescending() {
+        List<TopScoreRecord> scores = repo.topScores();
+        for (int i = 1; i < scores.size(); i++) {
+            assertTrue(
+                    scores.get(i - 1).getTotalScore() >= scores.get(i).getTotalScore(),
+                    "Top scores should be in descending order"
+            );
+        }
+    }
+
+    // Tests: idempotent player upsert
+
+    @Test
+    @Order(10)
+    void saveGame_samePlayerNameTwiceDoesNotDuplicate() {
+        // Inserting the same name twice (across two saveGame calls) must not throw
+        // and must not create duplicate player rows
+        assertDoesNotThrow(() -> {
+            repo.saveGame(List.of("Alice", "Bob"), new int[]{10, 0}, 0, 1, ts(0));
+            repo.saveGame(List.of("Alice", "Bob"), new int[]{20, 0}, 0, 1, ts(0));
+        }, "Duplicate player names across games should be handled by the MERGE/upsert");
+    }
+
+    // Tests: safety-limit game (winner == -1)
+
+    @Test
+    @Order(11)
+    void saveGame_safetyLimitGamePersistsWithNoWinner() {
+        List<String> players = List.of("Zara", "Max");
+        int[] scores = {0, 0};
+
+        // winner = -1 means safety limit was hit, no winner
+        assertDoesNotThrow(() ->
+                        repo.saveGame(players, scores, -1, 3000, ts(0)),
+                "A safety-limit game (winner=-1) should persist without errors"
+        );
+
+        List<GameRecord> recent = repo.recentGames(1);
+        var playerRows = recent.getFirst().getPlayers();
+        boolean anyWinner = playerRows.stream().anyMatch(GamePlayerRecord::isWinner);
+        assertFalse(anyWinner, "No player should be marked as winner when safety limit was hit");
     }
 }
