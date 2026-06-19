@@ -11,6 +11,11 @@ import java.util.Properties;
 /**
  * Builds and holds the single SqlSessionFactory for the application.
  * Call {@link #init(Properties)} once at startup before any repository use.
+ *
+ * <p>Credentials are resolved from environment variables
+ * ({@code DB_USERNAME}, {@code DB_PASSWORD}) with sensible defaults for
+ * the embedded H2 database used in development and testing.  Do not put
+ * real credentials in source code.
  */
 public class Database {
 
@@ -36,13 +41,17 @@ public class Database {
 
     /**
      * Convenience: build properties for an H2 file database at the given path.
+     *
+     * <p>Username/password are read from the {@code DB_USERNAME} / {@code DB_PASSWORD}
+     * environment variables.  If unset, the H2 embedded defaults ("sa" / "") are used,
+     * which is safe because the embedded H2 instance is not network-accessible.
      */
     public static Properties h2FileProps(String filePath) {
         Properties p = new Properties();
         p.setProperty("db.driver", "org.h2.Driver");
         p.setProperty("db.url", "jdbc:h2:file:" + filePath + ";AUTO_SERVER=TRUE");
-        p.setProperty("db.username", "sa");
-        p.setProperty("db.password", "");
+        p.setProperty("db.username", envOrDefault("DB_USERNAME", "sa"));
+        p.setProperty("db.password", envOrDefault("DB_PASSWORD", ""));
         return p;
     }
 
@@ -53,8 +62,13 @@ public class Database {
         Properties p = new Properties();
         p.setProperty("db.driver", "org.h2.Driver");
         p.setProperty("db.url", "jdbc:h2:mem:" + name + ";DB_CLOSE_DELAY=-1");
-        p.setProperty("db.username", "sa");
-        p.setProperty("db.password", "");
+        p.setProperty("db.username", envOrDefault("DB_USERNAME", "sa"));
+        p.setProperty("db.password", envOrDefault("DB_PASSWORD", ""));
         return p;
+    }
+
+    private static String envOrDefault(String envVar, String defaultValue) {
+        String value = System.getenv(envVar);
+        return (value != null && !value.isBlank()) ? value : defaultValue;
     }
 }
