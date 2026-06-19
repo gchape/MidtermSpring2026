@@ -14,7 +14,7 @@ WORKDIR /app
 
 COPY --from=builder /build/target/uno.jar uno.jar
 
-RUN mkdir -p logs
+RUN mkdir -p logs data
 
 ENTRYPOINT ["java", "-jar", "uno.jar"]
-CMD ["--bots", "3", "--games", "1"]
+CMD ["--bots", "3", "--target", "500", "--quiet"]

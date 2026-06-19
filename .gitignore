@@ -52,3 +52,6 @@ logs/
 # Test reports
 test-results/
 surefire-reports/
+
+# H2 database files
+data/

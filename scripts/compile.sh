@@ -3,4 +3,4 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-./mvnw clean compile
+./mvnw -q clean compile

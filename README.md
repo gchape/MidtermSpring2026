@@ -1,37 +1,90 @@
-## Assignment 5 — UNO CLI
+# UNO — Final Project
 
-Game results are automatically saved to an embedded H2 database (`data/uno.mv.db`).
-No database server installation is required.
+A command-line UNO implementation in Java with full rule support, bot AI, multi-round scoring, and game history
+persistence.
 
-### View game history and statistics
-```bash
-java -jar target/uno.jar --report
+## Requirements
+
+- Java 21+ (unnamed class `void main` preview feature)
+- Maven 3.9+
+
+## Build and Run
+
+```sh
+# Compile
+./scripts/compile.sh
+
+# Play a bot-only game (default: 3 bots, target score 500)
+./scripts/run.sh
+
+# Play with a human player
+./scripts/run.sh --human
+
+# Custom options
+./scripts/run.sh --bots 2 --target 200 --seed 42
+
+# Run tests
+./scripts/test.sh
+
+# Smoke check (deterministic bot game, asserts non-zero scores)
+./scripts/smoke.sh
 ```
 
-### Run with a custom database path
-```bash
-java -jar target/uno.jar --db-path /tmp/myuno --games 5 --quiet
+## CLI Options
+
+| Flag             | Default      | Description                                       |
+|------------------|--------------|---------------------------------------------------|
+| `--bots N`       | 3            | Number of bot players (total players must be 2–4) |
+| `--target N`     | 500          | Score target to win the match                     |
+| `--human`        | off          | Add a human player                                |
+| `--quiet`        | off          | Suppress turn-by-turn output                      |
+| `--seed N`       | random       | Fix the random seed for reproducible games        |
+| `--db-path PATH` | `./data/uno` | Custom database file path                         |
+| `--no-db`        | off          | Disable persistence entirely                      |
+| `--report`       | off          | Print game history and statistics, then exit      |
+
+## Architecture
+
+| Package | Responsibility                                         |
+|---------|--------------------------------------------------------|
+| `model` | `Card`, `GameState` — pure data, no I/O                |
+| `rules` | `Rules` — stateless legality and scoring logic         |
+| `game`  | `GameEngine`, `CardEffects`, `CardEffect` — game loop  |
+| `bot`   | `BotStrategy` — bot card selection and color calling   |
+| `input` | `PlayerInputSource`, `ConsoleInput`, `NullInputSource` |
+| `view`  | `GameView`, `ConsoleView`, `SilentView`                |
+
+Game logic is fully testable without a terminal. `GameEngine` only depends on `GameState`, `GameView`, and
+`PlayerInputSource` interfaces.
+
+## Persistence
+
+Game results are saved automatically to an embedded H2 database (`data/uno.mv.db`) after each match.
+
+```sh
+# View game history, win counts, and high scores
+./scripts/run.sh --report
+
+# Play without saving results
+./scripts/run.sh --no-db --quiet --seed 42
+
+# Use a custom database path
+./scripts/run.sh --db-path /tmp/myuno
 ```
 
-### Disable the database
-```bash
-java -jar target/uno.jar --no-db --games 5
+See [docs/database.md](docs/database.md) for full schema and query documentation.
+
+## Running Tests
+
+```sh
+mvn test
 ```
 
-### Configure credentials (optional)
-The embedded H2 database uses safe defaults (`sa` / empty password).
-To override:
-```bash
-export DB_USERNAME=myuser
-export DB_PASSWORD=mypassword
-java -jar target/uno.jar
-```
+Tests cover deck composition, legal play, all action cards, draw/pass behavior, UNO call and missed-UNO penalty, round
+scoring, multi-round target detection, and persistence.
 
-### Run persistence tests
-```bash
-mvn test -Dtest=GameRepositoryTest
-```
+## Documentation
 
-Tests use an isolated in-memory H2 database — no files written, no external setup required.
-
-For full database documentation see [docs/database.md](docs/database.md).
+- [docs/rules-supported.md](docs/rules-supported.md) — which UNO rules are implemented and which variants are used
+- [docs/final-report.md](docs/final-report.md) — architecture, test coverage, and known limitations
+- [docs/database.md](docs/database.md) — schema, ORM configuration, and persistence flags

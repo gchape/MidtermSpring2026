@@ -4,23 +4,14 @@ import tech.provokedynamic.uno.model.Card;
 
 import java.util.List;
 
-/**
- * Console implementation of GameView.
- * Reproduces the original IO.println output exactly — behavior preserved.
- */
 public class ConsoleView implements GameView {
 
     private static String join(List<Card> cards) {
         var sb = new StringBuilder();
-
         for (int i = 0; i < cards.size(); i++) {
             sb.append(i).append(":").append(cards.get(i));
-
-            if (i < cards.size() - 1) {
-                sb.append(" ");
-            }
+            if (i < cards.size() - 1) sb.append(" ");
         }
-
         return sb.toString();
     }
 
@@ -79,6 +70,11 @@ public class ConsoleView implements GameView {
     @Override
     public void showUno(String playerName) {
         IO.println(playerName + " says UNO!");
+    }
+
+    @Override
+    public void showMissedUno(String playerName) {
+        IO.println(playerName + " forgot to say UNO and draws two cards.");
     }
 
     @Override

@@ -26,4 +26,12 @@ public interface PlayerInputSource {
      * Ask which color to call after playing a wild.
      */
     Card.Color askColor();
+
+    /**
+     * Ask whether the player wants to call UNO after dropping to one card.
+     * Declining (or any non-affirmative response) leaves the player exposed
+     * to the missed-UNO penalty on the next turn. Bots never go through this
+     * method — see {@code BotStrategy.callsUno()}.
+     */
+    boolean askCallUno();
 }

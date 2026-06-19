@@ -99,4 +99,14 @@ public class ConsoleInput implements PlayerInputSource {
             IO.println("Bad color.");
         }
     }
+
+    @Override
+    public boolean askCallUno() {
+        IO.print("You have one card left! Call UNO? y/n: ");
+
+        String answer = scanner.nextLine();
+
+        return answer.equalsIgnoreCase("y")
+                || answer.equalsIgnoreCase("yes");
+    }
 }

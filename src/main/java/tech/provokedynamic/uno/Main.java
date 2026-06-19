@@ -1,6 +1,6 @@
 package tech.provokedynamic.uno;
 
-import lombok.extern.slf4j.Slf4j;
+import module java.base;
 import tech.provokedynamic.uno.db.Database;
 import tech.provokedynamic.uno.db.SchemaInit;
 import tech.provokedynamic.uno.db.StatsReport;
@@ -14,126 +14,111 @@ import tech.provokedynamic.uno.view.ConsoleView;
 import tech.provokedynamic.uno.view.GameView;
 import tech.provokedynamic.uno.view.SilentView;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Scanner;
-
 /**
- * CLI entry point. Parses arguments, wires up GameState + GameEngine,
- * and runs the requested number of games.
+ * CLI entry point. Wires up state, engine, and view, then runs rounds
+ * until a player reaches the target score (default 500).
+ * <p>
+ * Persistence (H2 + MyBatis) is enabled by default: the schema is applied
+ * on startup and the completed match is saved once a target-score winner
+ * is found. Use --no-db to skip persistence entirely, or --report to print
+ * game history and statistics instead of playing.
  */
-@Slf4j
-public class Main {
+class Main {
 
     static void main(String[] args) {
         int bots = 3;
-        int games = 1;
+        int target = 500;
         boolean human = false;
         boolean quiet = false;
-        boolean noDB = false;
+        boolean noDb = false;
         boolean report = false;
         long seed = System.currentTimeMillis();
         String dbPath = "./data/uno";
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
-                case "--bots"    -> bots = Integer.parseInt(args[++i]);
-                case "--games"   -> games = Integer.parseInt(args[++i]);
-                case "--human"   -> human = true;
-                case "--quiet"   -> quiet = true;
-                case "--seed"    -> seed = Long.parseLong(args[++i]);
-                case "--no-db"   -> noDB = true;
-                case "--report"  -> report = true;
+                case "--bots" -> bots = Integer.parseInt(args[++i]);
+                case "--target" -> target = Integer.parseInt(args[++i]);
+                case "--human" -> human = true;
+                case "--quiet" -> quiet = true;
+                case "--seed" -> seed = Long.parseLong(args[++i]);
                 case "--db-path" -> dbPath = args[++i];
+                case "--no-db" -> noDb = true;
+                case "--report" -> report = true;
                 case "--help" -> {
-                    System.out.println("Usage: java -jar uno.jar [--bots N] [--games N] [--human] [--quiet] [--seed N] [--no-db] [--db-path PATH] [--report]");
+                    IO.println("Usage: scripts/run.sh [--bots N] [--target N] [--human] [--quiet] " +
+                            "[--seed N] [--db-path PATH] [--no-db] [--report]");
                     return;
                 }
             }
         }
 
-        // Init database (unless --no-db)
-        GameRepository repo = null;
-        if (!noDB) {
-            new java.io.File(dbPath).getParentFile().mkdirs();
+        if (!noDb) {
             Database.init(Database.h2FileProps(dbPath));
             SchemaInit.run();
-            repo = new GameRepository();
-            log.info("Database initialised at {}", dbPath);
         }
 
-        // --report mode: print stats and exit
         if (report) {
-            if (repo == null) {
-                System.out.println("Cannot show report: database is disabled (--no-db).");
+            if (noDb) {
+                IO.println("Cannot show --report together with --no-db.");
                 return;
             }
-            new StatsReport(repo).print();
+            new StatsReport(new GameRepository()).print();
             return;
         }
-
-        log.info("Starting UNO: bots={}, games={}, human={}, seed={}", bots, games, human, seed);
 
         GameState state = new GameState(10, new Random(seed));
         state.setupPlayers(bots, human);
 
         if (state.playerCount() < 2 || state.playerCount() > 4) {
-            System.out.println("UNO needs 2 to 4 players.");
-            log.error("Invalid player count: {}", state.playerCount());
+            IO.println("UNO needs 2 to 4 players.");
             return;
         }
 
         GameView view = quiet ? new SilentView() : new ConsoleView();
         PlayerInputSource inp = human ? new ConsoleInput(new Scanner(System.in)) : new NullInputSource();
+
         GameEngine engine = new GameEngine(state, view);
 
-        // Collect player names once (stable across games)
-        List<String> playerNames = new ArrayList<>();
-        for (int i = 0; i < state.playerCount(); i++) {
-            playerNames.add(state.playerName(i));
-        }
+        LocalDateTime startedAt = LocalDateTime.now();
+        int round = 0;
+        int overallWinner = -1;
 
-        for (int g = 1; g <= games; g++) {
+        while (overallWinner == -1) {
+            round++;
+            if (!quiet) IO.println("\n=== Round " + round + " ===");
+
+            engine.playGame(inp);
+
             if (!quiet) {
-                System.out.println("\n=== Game " + g + " ===");
-            }
-            log.info("=== Game {} of {} starting ===", g, games);
-
-            // Snapshot scores before this game so we can compute the per-game delta.
-            // GameState.scores is cumulative across the whole run; the DB needs
-            // the points earned in this single game only.
-            int[] scoresBefore = new int[state.playerCount()];
-            for (int i = 0; i < state.playerCount(); i++) {
-                scoresBefore[i] = state.getScore(i);
-            }
-
-            LocalDateTime startedAt = LocalDateTime.now();
-            int winner = engine.playGame(inp);
-
-            log.info("=== Game {} finished ===", g);
-
-            // Persist result using per-game delta, not the cumulative total
-            if (repo != null) {
-                int[] gameScores = new int[state.playerCount()];
+                IO.println("\nScores after round " + round + ":");
                 for (int i = 0; i < state.playerCount(); i++) {
-                    gameScores[i] = state.getScore(i) - scoresBefore[i];
+                    IO.println("  " + state.playerName(i) + ": " + state.getScore(i));
                 }
-                repo.saveGame(playerNames, gameScores, winner, engine.getTurnsPlayed(), startedAt);
-                log.info("Game {} persisted to database", g);
+            }
+
+            for (int i = 0; i < state.playerCount(); i++) {
+                if (state.getScore(i) >= target) {
+                    overallWinner = i;
+                    break;
+                }
             }
         }
 
-        System.out.println("\nFinal scores:");
-        log.info("Final scores after {} game(s):", games);
+        IO.println("\n" + state.playerName(overallWinner)
+                + " wins the game with " + state.getScore(overallWinner) + " points!");
+
+        IO.println("\nFinal scores:");
+        List<String> names = new ArrayList<>();
+        int[] finalScores = new int[state.playerCount()];
         for (int i = 0; i < state.playerCount(); i++) {
-            System.out.println(state.playerName(i) + ": " + state.getScore(i));
-            log.info("  {}: {}", state.playerName(i), state.getScore(i));
+            IO.println(state.playerName(i) + ": " + state.getScore(i));
+            names.add(state.playerName(i));
+            finalScores[i] = state.getScore(i);
         }
 
-        if (repo != null && !quiet) {
-            System.out.println("\nRun with --report to view game history and statistics.");
+        if (!noDb) {
+            new GameRepository().saveGame(names, finalScores, overallWinner, round, startedAt);
         }
     }
 }

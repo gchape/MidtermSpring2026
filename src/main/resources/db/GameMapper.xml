@@ -3,25 +3,16 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="tech.provokedynamic.uno.db.mapper.GameMapper">
 
-    <!--
-        gameResultMap: one GameRecord row per game, with a nested collection
-        of GamePlayerRecord rows.
-
-        The outer <id> (g_id) lets MyBatis know when it has moved to a new game.
-        The inner <id> (player_id) tells it when it has moved to a new player row
-        within the same game — without it MyBatis cannot deduplicate correctly
-        when multiple players share the same game_id.
-    -->
     <resultMap id="gameResultMap" type="GameRecord">
-        <id property="id" column="g_id"/>
-        <result property="startedAt" column="started_at"/>
-        <result property="finishedAt" column="finished_at"/>
+        <id     property="id"           column="g_id"/>
+        <result property="startedAt"    column="started_at"/>
+        <result property="finishedAt"   column="finished_at"/>
         <result property="roundsPlayed" column="rounds_played"/>
         <collection property="players" ofType="GamePlayerRecord">
-            <id property="playerId" column="player_id"/>
+            <result property="playerId"   column="player_id"/>
             <result property="playerName" column="player_name"/>
-            <result property="score" column="score"/>
-            <result property="winner" column="is_winner"/>
+            <result property="score"      column="score"/>
+            <result property="winner"     column="is_winner"/>
         </collection>
     </resultMap>
 
@@ -32,8 +23,8 @@
 
     <update id="updateGame">
         UPDATE games
-        SET finished_at = #{finishedAt},
-        rounds_played = #{roundsPlayed}
+        SET finished_at  = #{finishedAt},
+            rounds_played = #{roundsPlayed}
         WHERE id = #{id}
     </update>
 
@@ -42,28 +33,23 @@
         VALUES (#{gameId}, #{playerId}, #{score}, #{winner})
     </insert>
 
-    <!--
-        findRecentGames: fetch the N most recently finished games together
-        with all their player rows.  The sub-select limits the set of games;
-        the outer joins hydrate the full resultMap.
-    -->
     <select id="findRecentGames" resultMap="gameResultMap">
-        SELECT g.id AS g_id,
-        g.started_at,
-        g.finished_at,
-        g.rounds_played,
-        gp.player_id,
-        p.name AS player_name,
-        gp.score,
-        gp.is_winner
+        SELECT g.id          AS g_id,
+               g.started_at,
+               g.finished_at,
+               g.rounds_played,
+               gp.player_id,
+               p.name        AS player_name,
+               gp.score,
+               gp.is_winner
         FROM (
-        SELECT id FROM games
-        ORDER BY finished_at DESC
-        LIMIT #{limit}
-        ) AS recent
-        JOIN games g ON g.id = recent.id
-        JOIN game_players gp ON gp.game_id = g.id
-        JOIN players p ON p.id = gp.player_id
+                 SELECT id FROM games
+                 ORDER BY finished_at DESC
+                     LIMIT #{limit}
+             ) AS recent
+                 JOIN games g       ON g.id  = recent.id
+                 JOIN game_players gp ON gp.game_id = g.id
+                 JOIN players p     ON p.id  = gp.player_id
         ORDER BY g.finished_at DESC, gp.is_winner DESC
     </select>
 

@@ -6,6 +6,7 @@ import tech.provokedynamic.uno.model.Card;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Characterization tests for BotStrategy.
@@ -133,5 +134,12 @@ class BotStrategyTest {
     void singleColorCard() {
         List<Card> hand = List.of(Card.fromCode("G5"));
         assertEquals(Card.Color.GREEN, BotStrategy.chooseColor(hand));
+    }
+
+    @Test
+    void botsAlwaysCallUno() {
+        // Documented simplification: bots never miss a UNO call.
+        // Only human players can decline via PlayerInputSource.askCallUno().
+        assertTrue(BotStrategy.callsUno());
     }
 }

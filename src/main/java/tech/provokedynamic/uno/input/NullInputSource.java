@@ -24,4 +24,9 @@ public class NullInputSource implements PlayerInputSource {
     public Card.Color askColor() {
         throw new IllegalStateException("askColor called in bot-only game");
     }
+
+    @Override
+    public boolean askCallUno() {
+        throw new IllegalStateException("askCallUno called in bot-only game");
+    }
 }

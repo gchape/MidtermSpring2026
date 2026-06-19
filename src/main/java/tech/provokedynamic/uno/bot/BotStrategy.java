@@ -75,4 +75,15 @@ public class BotStrategy {
         log.debug("BotColor: chose {} (r={}, y={}, g={}, b={})", chosen, r, y, g, b);
         return chosen;
     }
+
+    /**
+     * Whether the bot successfully calls UNO when it drops to one card.
+     * Bots always call successfully — a documented simplification (see
+     * docs/rules-supported.md) that keeps bot-only games deterministic.
+     * Only human players, via {@code PlayerInputSource.askCallUno()}, can
+     * actually decline and risk the missed-UNO penalty.
+     */
+    public static boolean callsUno() {
+        return true;
+    }
 }

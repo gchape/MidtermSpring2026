@@ -6,7 +6,6 @@ import tech.provokedynamic.uno.input.NullInputSource;
 import tech.provokedynamic.uno.input.PlayerInputSource;
 import tech.provokedynamic.uno.model.Card;
 import tech.provokedynamic.uno.model.GameState;
-import tech.provokedynamic.uno.rules.Rules;
 import tech.provokedynamic.uno.view.SilentView;
 
 import java.util.List;
@@ -31,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * All tests use SilentView — no console output.
  */
 class GameEngineTest {
+
     private GameState state;
     private GameEngine engine;
 
@@ -153,6 +153,13 @@ class GameEngineTest {
     /**
      * Original behavior: when a bot draws and the drawn card is legal,
      * it immediately plays it without any confirmation.
+     * <p>
+     * Unlike the previous version of this test, this one drives the real
+     * {@code GameEngine.playTurn()} / {@code handleDraw()} code path: the
+     * bot's hand is forced to a single illegal card (so it must draw), and
+     * {@code GameState.forceNextDraw()} guarantees the next draw is legal.
+     * The assertions then confirm the engine actually played that card,
+     * rather than just checking arithmetic on hand sizes.
      */
     @Test
     void botAutoPlaysDrawnCardWhenLegal() {
@@ -161,33 +168,24 @@ class GameEngineTest {
         int cp = state.getCurrentPlayer();
         Card upCard = state.getUpCard();
 
-        // Give the bot a hand with only one illegal card — forces a draw
+        // Give the bot a hand with only one illegal card — forces a draw.
         while (state.handSize(cp) > 0) {
             state.removeFromHand(cp, 0);
         }
         state.addToHand(cp, illegalCardFor(upCard));
 
-        // Seed the deck with a single known-legal card
+        // Rig the deck so the very next draw is guaranteed legal.
         Card legalCard = legalCardFor(upCard);
-        while (state.deckSize() > 0) {
-            state.addToDiscard(state.draw());
-        }
-        state.addToDiscard(legalCard);
+        state.forceNextDraw(legalCard);
 
-        int handSizeBefore = state.handSize(cp); // 1
+        int handSizeBefore = state.handSize(cp); // 1 (the illegal card)
 
-        Card drawn = state.draw();
-        state.addToHand(cp, drawn); // hand is now size 2
+        engine.playTurn(new NullInputSource());
 
-        assertTrue(Rules.isLegal(drawn, upCard, state.getCalledColor()),
-                "Pre-condition failed: drawn card must be legal on up-card " + upCard +
-                        ", but drew " + drawn);
-
-        // Bot immediately plays the drawn card — net hand size unchanged
-        state.removeFromHand(cp, state.handSize(cp) - 1);
-
+        assertEquals(legalCard.toString(), state.getUpCard().toString(),
+                "Bot should have immediately played the legal card it drew");
         assertEquals(handSizeBefore, state.handSize(cp),
-                "Bot drew and immediately played — hand size should be unchanged");
+                "Net hand size should be unchanged: +1 from the draw, -1 from the auto-play");
     }
 
     private Card illegalCardFor(Card upCard) {
@@ -211,7 +209,9 @@ class GameEngineTest {
 
     /**
      * Scripted input for human-turn tests. Returns card choices in order,
-     * then -1 (draw) once exhausted.
+     * then -1 (draw) once exhausted. askCallUno() defaults to true since
+     * these tests are not exercising the UNO-call mechanic — see
+     * UnoCallTest for that.
      */
     private static class ScriptedInput implements PlayerInputSource {
         private final int[] choices;
@@ -234,6 +234,11 @@ class GameEngineTest {
         @Override
         public Card.Color askColor() {
             return Card.Color.RED;
+        }
+
+        @Override
+        public boolean askCallUno() {
+            return true;
         }
     }
 }

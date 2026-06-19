@@ -4,10 +4,6 @@ import tech.provokedynamic.uno.model.Card;
 
 import java.util.List;
 
-/**
- * No-op view used in tests and quiet bot-only simulations.
- * Produces no output. Replaces the original {@code quiet} flag.
- */
 public class SilentView implements GameView {
 
     @Override
@@ -44,6 +40,10 @@ public class SilentView implements GameView {
 
     @Override
     public void showUno(String n) {
+    }
+
+    @Override
+    public void showMissedUno(String n) {
     }
 
     @Override

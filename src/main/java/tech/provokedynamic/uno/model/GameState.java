@@ -22,15 +22,18 @@ public class GameState {
 
     private final Random random;
 
-    @Setter
     @Getter
+    @Setter
     private Card upCard = null;
+
     @Setter
     @Getter
     private Card.Color calledColor = Card.Color.NONE;
+
     @Setter
     @Getter
     private int direction = 1;
+
     @Setter
     @Getter
     private int currentPlayer = 0;
@@ -165,5 +168,15 @@ public class GameState {
 
     public void clearHand(int playerIndex) {
         hands.get(playerIndex).clear();
+    }
+
+    /**
+     * Test seam: places {@code card} on top of the deck so the very next
+     * {@link #draw()} call returns it deterministically. Production code
+     * never calls this — it exists so tests can rig a known draw outcome
+     * without depending on shuffle/reshuffle timing.
+     */
+    public void forceNextDraw(Card card) {
+        deck.addFirst(card);
     }
 }
