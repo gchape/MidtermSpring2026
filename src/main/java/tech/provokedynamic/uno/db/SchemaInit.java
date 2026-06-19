@@ -1,5 +1,7 @@
 package tech.provokedynamic.uno.db;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.jdbc.ScriptRunner;
 
@@ -12,10 +14,8 @@ import java.sql.SQLException;
  * Runs db/schema.sql against the configured database.
  * Safe to call on every startup — all statements use CREATE IF NOT EXISTS.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SchemaInit {
-
-    private SchemaInit() {
-    }
 
     public static void run() {
         try (var sqlSession = Database.factory().openSession();

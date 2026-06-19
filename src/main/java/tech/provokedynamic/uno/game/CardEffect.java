@@ -10,5 +10,6 @@ import tech.provokedynamic.uno.view.GameView;
  */
 @FunctionalInterface
 public interface CardEffect {
+
     void apply(GameState state, GameView view);
 }

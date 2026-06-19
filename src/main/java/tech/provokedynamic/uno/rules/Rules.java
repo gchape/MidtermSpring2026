@@ -1,5 +1,7 @@
 package tech.provokedynamic.uno.rules;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import tech.provokedynamic.uno.model.Card;
 
 /**
@@ -13,11 +15,8 @@ import tech.provokedynamic.uno.model.Card;
  * Now there is exactly one place. All three callers delegate here.
  * This class is stateless and fully testable without running the CLI.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Rules {
-
-    private Rules() {
-    }
-
     /**
      * Returns true if {@code card} may legally be played on top of {@code upCard}
      * given the currently called color (NONE if no wild color is active).

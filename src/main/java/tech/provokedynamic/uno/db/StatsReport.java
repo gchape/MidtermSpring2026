@@ -1,5 +1,6 @@
 package tech.provokedynamic.uno.db;
 
+import lombok.RequiredArgsConstructor;
 import tech.provokedynamic.uno.db.model.GamePlayerRecord;
 import tech.provokedynamic.uno.db.model.GameRecord;
 import tech.provokedynamic.uno.db.model.TopScoreRecord;
@@ -12,13 +13,10 @@ import java.util.List;
  * Prints game history and player statistics to stdout.
  * Exposed via --report flag in Main.
  */
+@RequiredArgsConstructor
 public class StatsReport {
 
     private final GameRepository repo;
-
-    public StatsReport(GameRepository repo) {
-        this.repo = repo;
-    }
 
     public void print() {
         printRecentGames(10);

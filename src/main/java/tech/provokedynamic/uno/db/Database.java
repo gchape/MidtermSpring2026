@@ -1,5 +1,7 @@
 package tech.provokedynamic.uno.db;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
@@ -17,12 +19,10 @@ import java.util.Properties;
  * the embedded H2 database used in development and testing.  Do not put
  * real credentials in source code.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Database {
 
     private static SqlSessionFactory factory;
-
-    private Database() {
-    }
 
     public static void init(Properties props) {
         try (InputStream is = Resources.getResourceAsStream("mybatis-config.xml")) {
