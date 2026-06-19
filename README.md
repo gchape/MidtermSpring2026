@@ -136,7 +136,6 @@ src/
 │   │   │   └── GameEngine.java        # Game loop
 │   │   ├── input/
 │   │   │   ├── ConsoleInput.java      # Human input via stdin
-│   │   │   ├── IO.java                # Console output wrapper
 │   │   │   ├── NullInputSource.java   # No-op for bot-only games
 │   │   │   └── PlayerInputSource.java # Input interface
 │   │   ├── model/
@@ -146,7 +145,6 @@ src/
 │   │   └── view/
 │   │       ├── ConsoleView.java       # Console output
 │   │       ├── GameView.java          # View interface
-│   │       ├── IO.java                # Console output wrapper
 │   │       └── SilentView.java        # No-op for tests/quiet mode
 │   └── resources/logback.xml          # Logging configuration
 └── test/
