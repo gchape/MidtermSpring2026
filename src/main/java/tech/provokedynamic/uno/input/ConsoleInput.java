@@ -1,5 +1,6 @@
 package tech.provokedynamic.uno.input;
 
+import lombok.RequiredArgsConstructor;
 import tech.provokedynamic.uno.model.Card;
 import tech.provokedynamic.uno.rules.Rules;
 
@@ -8,13 +9,10 @@ import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.stream.IntStream;
 
+@RequiredArgsConstructor
 public class ConsoleInput implements PlayerInputSource {
 
     private final Scanner scanner;
-
-    public ConsoleInput(Scanner scanner) {
-        this.scanner = scanner;
-    }
 
     @Override
     public int askHuman(List<Card> hand, Card upCard, Card.Color calledColor) {

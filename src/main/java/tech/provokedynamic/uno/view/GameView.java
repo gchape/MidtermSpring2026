@@ -14,6 +14,7 @@ import java.util.List;
  * - A future GUI would implement its own view.
  */
 public interface GameView {
+
     void showTurnHeader(String playerName, Card upCard, Card.Color calledColor, List<Card> hand);
 
     void showDraw(String playerName, Card drawn);

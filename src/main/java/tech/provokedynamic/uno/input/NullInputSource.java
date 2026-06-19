@@ -9,6 +9,7 @@ import java.util.List;
  * should ever be requested. Surfaces bugs immediately instead of NPE.
  */
 public class NullInputSource implements PlayerInputSource {
+
     @Override
     public int askHuman(List<Card> hand, Card upCard, Card.Color c) {
         throw new IllegalStateException("askHuman called in bot-only game");

@@ -1,7 +1,6 @@
 package tech.provokedynamic.uno.game;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import tech.provokedynamic.uno.model.Card;
 
 import java.util.EnumMap;
@@ -11,9 +10,9 @@ import java.util.Map;
  * Maps each Card.Rank to its post-play effect.
  * Replaces the switch in GameEngine.resolveAction().
  */
+@Slf4j
 public class CardEffects {
 
-    private static final Logger log = LoggerFactory.getLogger(CardEffects.class);
     private static final Map<Card.Rank, CardEffect> EFFECTS = new EnumMap<>(Card.Rank.class);
 
     static {

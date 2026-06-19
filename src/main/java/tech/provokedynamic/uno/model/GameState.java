@@ -1,5 +1,8 @@
 package tech.provokedynamic.uno.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +12,7 @@ import java.util.Random;
  * All mutable game state in one place, accessed via getters and setters.
  */
 public class GameState {
+
     private final List<String> playerNames = new ArrayList<>();
     private final List<Boolean> humanPlayers = new ArrayList<>();
     private final List<List<Card>> hands = new ArrayList<>();
@@ -18,9 +22,17 @@ public class GameState {
 
     private final Random random;
 
+    @Setter
+    @Getter
     private Card upCard = null;
+    @Setter
+    @Getter
     private Card.Color calledColor = Card.Color.NONE;
+    @Setter
+    @Getter
     private int direction = 1;
+    @Setter
+    @Getter
     private int currentPlayer = 0;
 
     public GameState(int maxPlayers, Random random) {
@@ -58,40 +70,8 @@ public class GameState {
         return humanPlayers.get(i);
     }
 
-    public Card getUpCard() {
-        return upCard;
-    }
-
-    public void setUpCard(Card upCard) {
-        this.upCard = upCard;
-    }
-
-    public Card.Color getCalledColor() {
-        return calledColor;
-    }
-
-    public void setCalledColor(Card.Color color) {
-        this.calledColor = color;
-    }
-
-    public int getDirection() {
-        return direction;
-    }
-
-    public void setDirection(int direction) {
-        this.direction = direction;
-    }
-
     public void reverseDirection() {
         this.direction *= -1;
-    }
-
-    public int getCurrentPlayer() {
-        return currentPlayer;
-    }
-
-    public void setCurrentPlayer(int p) {
-        this.currentPlayer = p;
     }
 
     public int getScore(int i) {

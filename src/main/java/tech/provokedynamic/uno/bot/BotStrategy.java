@@ -1,7 +1,8 @@
 package tech.provokedynamic.uno.bot;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import tech.provokedynamic.uno.model.Card;
 import tech.provokedynamic.uno.rules.Rules;
 
@@ -11,12 +12,9 @@ import java.util.function.Predicate;
 /**
  * Bot player decision-making, separated from the game loop.
  */
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class BotStrategy {
-
-    private static final Logger log = LoggerFactory.getLogger(BotStrategy.class);
-
-    private BotStrategy() {
-    }
 
     /**
      * Returns the index of the card the bot wants to play,
