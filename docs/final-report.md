@@ -42,17 +42,19 @@ your hand ever drops to one card, you are prompted to call UNO — declining ris
 
 ## Architecture
 
-The project separates concerns into five layers:
+The project separates concerns into six layers:
 
 - **Model** (`GameState`, `Card`) — pure data, no I/O, no logic.
-- **Rules** (`Rules`) — stateless, static methods; independently testable.
-- **Game** (`GameEngine`, `CardEffects`) — the game loop and card effects. Depends only on interfaces (`GameView`,
-  `PlayerInputSource`), never on `Scanner` or `IO` directly.
+- **Rules** (`Rules`) — stateless, static methods; independently testable without any game context.
+- **Game** (`GameEngine`, `CardEffects`, `GameRunner`) — game loop and card effects. `GameEngine` drives a single
+  round; `GameRunner` drives the multi-round match and persistence call. Neither touches `Scanner` or `IO` directly.
 - **Bot** (`BotStrategy`) — pure functions, no state.
 - **View / Input** (`ConsoleView`, `SilentView`, `ConsoleInput`, `NullInputSource`) — the only layer that touches I/O.
+- **CLI** (`Main`, `CliArgs`) — argument parsing (`CliArgs` record) is fully separated from wiring and execution
+  (`Main`), making both independently testable.
 
 This means every game rule can be tested without a terminal: inject `SilentView` and `NullInputSource` (or a scripted
-`PlayerInputSource` for human-seat scenarios), manipulate `GameState` directly, and call `GameEngine` methods.
+`PlayerInputSource` for human-seat scenarios), manipulate `GameState` directly, and call `GameEngine` or `GameRunner`.
 
 `GameState` exposes one test-only seam, `forceNextDraw(Card)`, which places a card on top of the deck so a test
 can force a specific draw outcome deterministically. Production code never calls it.
@@ -74,7 +76,7 @@ can force a specific draw outcome deterministically. Production code never calls
 | `GameStateTest`         | 2.1 — deck/hand/turn primitives in isolation, no engine involved                        |
 | `GameEngineTest`        | 2.1 — full-game integration, illegal-play penalties, rigged-deck auto-play test         |
 | `SafetyLimitTest`       | engine robustness — no crash across 20 seeds, valid return values, two-player stability |
-| `GameRepositoryTest`    | persistence — isolated per-test in-memory H2 database, all CRUD paths covered           |
+| `GameRepositoryTest`    | persistence — isolated in-memory H2 database, all CRUD paths covered                    |
 | `StatsReportTest`       | persistence — report output verified after saving games, win counts, top scores         |
 
 ## Limitations

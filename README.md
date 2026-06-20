@@ -45,17 +45,18 @@ persistence.
 
 ## Architecture
 
-| Package | Responsibility                                         |
-|---------|--------------------------------------------------------|
-| `model` | `Card`, `GameState` — pure data, no I/O                |
-| `rules` | `Rules` — stateless legality and scoring logic         |
-| `game`  | `GameEngine`, `CardEffects`, `CardEffect` — game loop  |
-| `bot`   | `BotStrategy` — bot card selection and color calling   |
-| `input` | `PlayerInputSource`, `ConsoleInput`, `NullInputSource` |
-| `view`  | `GameView`, `ConsoleView`, `SilentView`                |
+| Package | Class(es)                                               | Responsibility                              |
+|---------|---------------------------------------------------------|---------------------------------------------|
+| `model` | `Card`, `GameState`                                     | Pure data, no I/O                           |
+| `rules` | `Rules`                                                 | Stateless legality and scoring logic        |
+| `game`  | `GameEngine`, `CardEffects`, `CardEffect`, `GameRunner` | Single-round loop, card effects, match loop |
+| `bot`   | `BotStrategy`                                           | Bot card selection and color calling        |
+| `input` | `PlayerInputSource`, `ConsoleInput`, `NullInputSource`  | Human input abstraction                     |
+| `view`  | `GameView`, `ConsoleView`, `SilentView`                 | Output abstraction                          |
+| (root)  | `Main`, `CliArgs`                                       | CLI wiring; argument parsing                |
 
-Game logic is fully testable without a terminal. `GameEngine` only depends on `GameState`, `GameView`, and
-`PlayerInputSource` interfaces.
+Game logic is fully testable without a terminal. `GameEngine` and `GameRunner` depend only on `GameState`,
+`GameView`, and `PlayerInputSource` interfaces — never on `Scanner` or `IO` directly.
 
 ## Persistence
 
