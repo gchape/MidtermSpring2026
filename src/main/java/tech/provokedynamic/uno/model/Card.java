@@ -93,6 +93,5 @@ public record Card(Color color, Rank rank, int number) {
         Rank(int baseValue) {
             this.baseValue = baseValue;
         }
-
     }
 }

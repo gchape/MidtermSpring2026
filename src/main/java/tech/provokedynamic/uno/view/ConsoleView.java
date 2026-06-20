@@ -4,18 +4,21 @@ import tech.provokedynamic.uno.model.Card;
 
 import java.util.List;
 
+/**
+ * Human-readable console output for UNO game events.
+ */
 public class ConsoleView implements GameView {
 
-    private static String join(List<Card> cards) {
-        var sb = new StringBuilder();
+    private static String formatHand(List<Card> cards) {
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < cards.size(); i++) {
-            sb.append(i).append(":").append(cards.get(i));
-            if (i < cards.size() - 1) sb.append(" ");
+            if (i > 0) sb.append(' ');
+            sb.append(i).append(':').append(cards.get(i));
         }
         return sb.toString();
     }
 
-    private String colorToChar(Card.Color color) {
+    private static String colorChar(Card.Color color) {
         return switch (color) {
             case RED -> "R";
             case YELLOW -> "Y";
@@ -27,9 +30,9 @@ public class ConsoleView implements GameView {
 
     @Override
     public void showTurnHeader(String playerName, Card upCard, Card.Color calledColor, List<Card> hand) {
-        String colorStr = (calledColor == Card.Color.NONE) ? "" : " called " + colorToChar(calledColor);
-        IO.println("\nUp card: " + upCard + colorStr);
-        IO.println(playerName + " hand: " + join(hand));
+        String colorSuffix = calledColor == Card.Color.NONE ? "" : " called " + colorChar(calledColor);
+        IO.println("\nUp card: " + upCard + colorSuffix);
+        IO.println(playerName + " hand: " + formatHand(hand));
     }
 
     @Override
@@ -44,7 +47,7 @@ public class ConsoleView implements GameView {
 
     @Override
     public void showColorCall(String playerName, Card.Color color) {
-        IO.println(playerName + " calls " + colorToChar(color));
+        IO.println(playerName + " calls " + colorChar(color));
     }
 
     @Override
@@ -79,7 +82,7 @@ public class ConsoleView implements GameView {
 
     @Override
     public void showWin(String playerName, int points) {
-        IO.println(playerName + " wins and scores " + points);
+        IO.println(playerName + " wins the round and scores " + points + " points.");
     }
 
     @Override

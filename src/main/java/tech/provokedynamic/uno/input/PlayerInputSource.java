@@ -12,6 +12,7 @@ import java.util.List;
  * needing a real terminal.
  */
 public interface PlayerInputSource {
+
     /**
      * Ask which card to play. Returns index into hand, or -1 to draw.
      */

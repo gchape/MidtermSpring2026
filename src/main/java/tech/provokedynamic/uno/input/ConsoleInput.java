@@ -9,6 +9,9 @@ import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.stream.IntStream;
 
+/**
+ * Human player input sourced from stdin via {@link Scanner}.
+ */
 @RequiredArgsConstructor
 public class ConsoleInput implements PlayerInputSource {
 
@@ -17,49 +20,65 @@ public class ConsoleInput implements PlayerInputSource {
     @Override
     public int askHuman(List<Card> hand, Card upCard, Card.Color calledColor) {
         while (true) {
-            IO.print("Choose card index/code or draw: ");
+            IO.print("Choose card index/code or DRAW: ");
+            String input = scanner.nextLine().trim();
 
-            var input = scanner.nextLine().trim();
-            if (input.equalsIgnoreCase("DRAW")) {
-                return -1;
-            }
+            if (input.equalsIgnoreCase("DRAW")) return -1;
 
-            var cardSelection = parseCardSelection(input, hand);
-            if (cardSelection.isEmpty()) {
+            OptionalInt index = parseCardSelection(input, hand);
+            if (index.isEmpty()) {
                 IO.println("Card not found.");
                 continue;
             }
 
-            int index = cardSelection.getAsInt();
-            if (Rules.isLegal(hand.get(index), upCard, calledColor)) {
-                return index;
-            }
+            int i = index.getAsInt();
+            if (Rules.isLegal(hand.get(i), upCard, calledColor)) return i;
 
             IO.println("That card is not legal.");
         }
     }
 
-    private OptionalInt parseCardSelection(String input, List<Card> hand) {
-        var index = parseIndex(input, hand);
-
-        if (index.isPresent()) {
-            return index;
-        }
-
-        return findCardByCode(input, hand);
+    @Override
+    public boolean askPlayDrawn(Card drawn) {
+        IO.print("Play drawn card " + drawn + "? y/n: ");
+        String answer = scanner.nextLine().trim();
+        return isYes(answer);
     }
 
-    private OptionalInt parseIndex(String input, List<Card> hand) {
+    @Override
+    public Card.Color askColor() {
+        while (true) {
+            IO.print("Call color R/Y/G/B: ");
+            String input = scanner.nextLine().trim();
+
+            if (input.length() == 1) {
+                Card.Color color = Card.Color.fromCode(input.charAt(0));
+                if (color != Card.Color.NONE) return color;
+            }
+
+            IO.println("Bad color. Enter R, Y, G, or B.");
+        }
+    }
+
+    @Override
+    public boolean askCallUno() {
+        IO.print("You have one card left! Call UNO? y/n: ");
+        String answer = scanner.nextLine().trim();
+        return isYes(answer);
+    }
+
+    private OptionalInt parseCardSelection(String input, List<Card> hand) {
+        OptionalInt byIndex = parseIndex(input, hand.size());
+        return byIndex.isPresent() ? byIndex : findCardByCode(input, hand);
+    }
+
+    private OptionalInt parseIndex(String input, int handSize) {
         try {
             int index = Integer.parseInt(input);
-
-            if (index >= 0 && index < hand.size()) {
-                return OptionalInt.of(index);
-            }
+            return (index >= 0 && index < handSize) ? OptionalInt.of(index) : OptionalInt.empty();
         } catch (NumberFormatException ignored) {
+            return OptionalInt.empty();
         }
-
-        return OptionalInt.empty();
     }
 
     private OptionalInt findCardByCode(String input, List<Card> hand) {
@@ -68,45 +87,7 @@ public class ConsoleInput implements PlayerInputSource {
                 .findFirst();
     }
 
-    @Override
-    public boolean askPlayDrawn(Card drawn) {
-        IO.print("Play drawn card " + drawn + "? y/n: ");
-
-        String answer = scanner.nextLine();
-
-        return answer.equalsIgnoreCase("y")
-                || answer.equalsIgnoreCase("yes");
-    }
-
-    @Override
-    public Card.Color askColor() {
-        while (true) {
-            IO.print("Call color R/Y/G/B: ");
-
-            String input = scanner.nextLine().trim();
-
-            if (input.length() != 1) {
-                IO.println("Bad color.");
-                continue;
-            }
-
-            Card.Color color = Card.Color.fromCode(input.charAt(0));
-
-            if (color != Card.Color.NONE) {
-                return color;
-            }
-
-            IO.println("Bad color.");
-        }
-    }
-
-    @Override
-    public boolean askCallUno() {
-        IO.print("You have one card left! Call UNO? y/n: ");
-
-        String answer = scanner.nextLine();
-
-        return answer.equalsIgnoreCase("y")
-                || answer.equalsIgnoreCase("yes");
+    private boolean isYes(String answer) {
+        return answer.equalsIgnoreCase("y") || answer.equalsIgnoreCase("yes");
     }
 }
