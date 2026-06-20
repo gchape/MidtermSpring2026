@@ -11,58 +11,69 @@ import java.util.List;
 
 /**
  * Prints game history and player statistics to stdout.
- * Exposed via --report flag in Main.
+ * Invoked via the {@code --report} flag in {@code Main}.
  */
 @RequiredArgsConstructor
 public class StatsReport {
 
+    private static final int RECENT_GAMES_LIMIT = 10;
+
     private final GameRepository repo;
 
+    /**
+     * Prints all three report sections to stdout.
+     */
     public void print() {
-        printRecentGames(10);
+        printRecentGames();
         printWinCounts();
         printTopScores();
     }
 
-    private void printRecentGames(int limit) {
-        List<GameRecord> games = repo.recentGames(limit);
-        System.out.println("\n=== Recent Games (last " + limit + ") ===");
+    private void printRecentGames() {
+        List<GameRecord> games = repo.recentGames(RECENT_GAMES_LIMIT);
+        System.out.printf("%n=== Recent Games (last %d) ===%n", RECENT_GAMES_LIMIT);
+
         if (games.isEmpty()) {
             System.out.println("  No games recorded yet.");
             return;
         }
+
         for (GameRecord g : games) {
-            System.out.printf("  Game #%d  started=%s  rounds=%d%n",
+            System.out.printf("  Game #%-4d  started=%-20s  rounds=%d%n",
                     g.getId(), g.getStartedAt(), g.getRoundsPlayed());
             for (GamePlayerRecord gp : g.getPlayers()) {
-                String marker = gp.isWinner() ? " ★" : "";
-                System.out.printf("    %-12s  score=%d%s%n",
-                        gp.getPlayerName(), gp.getScore(), marker);
+                String winner = gp.isWinner() ? " ★" : "";   // ★
+                System.out.printf("    %-14s  score=%d%s%n",
+                        gp.getPlayerName(), gp.getScore(), winner);
             }
         }
     }
 
     private void printWinCounts() {
         List<WinCountRecord> rows = repo.winCounts();
-        System.out.println("\n=== Player Win Counts ===");
+        System.out.printf("%n=== Player Win Counts ===%n");
+
         if (rows.isEmpty()) {
             System.out.println("  No data.");
             return;
         }
+
         for (WinCountRecord r : rows) {
-            System.out.printf("  %-12s  %d win(s)%n", r.getPlayerName(), r.getWins());
+            System.out.printf("  %-14s  %d win(s)%n", r.getPlayerName(), r.getWins());
         }
     }
 
     private void printTopScores() {
         List<TopScoreRecord> rows = repo.topScores();
-        System.out.println("\n=== Highest Total Scores ===");
+        System.out.printf("%n=== Highest Total Scores ===%n");
+
         if (rows.isEmpty()) {
             System.out.println("  No data.");
             return;
         }
+
         for (TopScoreRecord r : rows) {
-            System.out.printf("  %-12s  %d pts%n", r.getPlayerName(), r.getTotalScore());
+            System.out.printf("  %-14s  %d pts%n", r.getPlayerName(), r.getTotalScore());
         }
     }
 }

@@ -1,5 +1,6 @@
 package tech.provokedynamic.uno.db.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.session.SqlSession;
 import tech.provokedynamic.uno.db.Database;
 import tech.provokedynamic.uno.db.mapper.GameMapper;
@@ -15,19 +16,39 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Persists game results and retrieves history/statistics.
- * Each public method opens its own session and commits or rolls back.
+ * Single persistence facade used by the application layer.
+ * <p>
+ * Each public method opens, uses, and closes its own {@link SqlSession}.
+ * Write operations commit explicitly; read operations are auto-closed
+ * without a commit (read-only).
  */
+@Slf4j
 public class GameRepository {
 
+    private static Map<String, Object> gamePlayerParams(int gameId, int playerId,
+                                                        int score, boolean winner) {
+        Map<String, Object> params = new HashMap<>(4);
+        params.put("gameId", gameId);
+        params.put("playerId", playerId);
+        params.put("score", score);
+        params.put("winner", winner);
+        return params;
+    }
+
     /**
-     * Persists a completed game.
+     * Persists a completed match in a single transaction.
+     * <ol>
+     *   <li>Upsert each player by name (idempotent).</li>
+     *   <li>Insert the {@code games} row and retrieve the auto-generated id.</li>
+     *   <li>Insert one {@code game_players} row per player.</li>
+     *   <li>Commit.</li>
+     * </ol>
      *
-     * @param playerNames  ordered list of player names
-     * @param scores       scores[i] corresponds to playerNames.get(i)
-     * @param winnerIndex  index of the winning player, or -1 if safety limit hit
-     * @param roundsPlayed number of rounds played
-     * @param startedAt    when the game started
+     * @param playerNames  ordered player names
+     * @param scores       {@code scores[i]} corresponds to {@code playerNames.get(i)}
+     * @param winnerIndex  winning player index, or -1 if the safety limit was hit
+     * @param roundsPlayed total rounds played in this match
+     * @param startedAt    match start timestamp
      */
     public void saveGame(List<String> playerNames,
                          int[] scores,
@@ -35,50 +56,56 @@ public class GameRepository {
                          int roundsPlayed,
                          LocalDateTime startedAt) {
 
+        log.info("Saving game: players={}, rounds={}, winner={}",
+                playerNames, roundsPlayed,
+                winnerIndex >= 0 ? playerNames.get(winnerIndex) : "none (safety limit)");
+
         try (SqlSession session = Database.factory().openSession()) {
             PlayerMapper pm = session.getMapper(PlayerMapper.class);
             GameMapper gm = session.getMapper(GameMapper.class);
 
-            // Upsert all players
             for (String name : playerNames) {
                 pm.insertIfAbsent(name);
             }
 
-            // Insert game row
             GameRecord game = new GameRecord();
             game.setStartedAt(startedAt);
             game.setFinishedAt(LocalDateTime.now());
             game.setRoundsPlayed(roundsPlayed);
-            gm.insertGame(game);  // id is populated via useGeneratedKeys
+            gm.insertGame(game);
 
-            // Insert one game_players row per player
+            log.debug("Inserted games row with id={}", game.getId());
+
             for (int i = 0; i < playerNames.size(); i++) {
                 PlayerRecord player = pm.findByName(playerNames.get(i));
-                Map<String, Object> params = new HashMap<>();
-                params.put("gameId", game.getId());
-                params.put("playerId", player.getId());
-                params.put("score", scores[i]);
-                params.put("winner", i == winnerIndex);
-                gm.insertGamePlayer(params);
+                gm.insertGamePlayer(gamePlayerParams(game.getId(), player.getId(), scores[i], i == winnerIndex));
+                log.debug("Inserted game_players row: player={}, score={}, winner={}",
+                        player.getName(), scores[i], i == winnerIndex);
             }
 
             session.commit();
+            log.info("Game saved successfully (id={})", game.getId());
         }
     }
 
     /**
-     * Returns the {@code limit} most recently finished games, newest first.
+     * Returns the {@code limit} most recently finished games, newest first,
+     * each with its player rows attached.
      */
     public List<GameRecord> recentGames(int limit) {
+        log.debug("Querying recent games (limit={})", limit);
         try (SqlSession session = Database.factory().openSession()) {
-            return session.getMapper(GameMapper.class).findRecentGames(limit);
+            List<GameRecord> results = session.getMapper(GameMapper.class).findRecentGames(limit);
+            log.debug("Found {} recent game(s)", results.size());
+            return results;
         }
     }
 
     /**
-     * Returns all players ranked by number of wins, descending.
+     * Returns all players ranked by win count, descending.
      */
     public List<WinCountRecord> winCounts() {
+        log.debug("Querying win counts");
         try (SqlSession session = Database.factory().openSession()) {
             return session.getMapper(PlayerMapper.class).findWinCounts();
         }
@@ -88,6 +115,7 @@ public class GameRepository {
      * Returns all players ranked by cumulative score, descending.
      */
     public List<TopScoreRecord> topScores() {
+        log.debug("Querying top scores");
         try (SqlSession session = Database.factory().openSession()) {
             return session.getMapper(PlayerMapper.class).findTopScores();
         }
